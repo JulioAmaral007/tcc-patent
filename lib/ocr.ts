@@ -1,8 +1,21 @@
-import * as pdfjsLib from 'pdfjs-dist'
 import Tesseract from 'tesseract.js'
 
-// Configure PDF.js worker
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`
+// PDF.js will be imported dynamically only when needed (client-side only)
+let pdfjsLib: typeof import('pdfjs-dist') | null = null
+
+async function getPdfjsLib() {
+  if (typeof window === 'undefined') {
+    throw new Error('PDF.js só pode ser usado no navegador')
+  }
+
+  if (!pdfjsLib) {
+    pdfjsLib = await import('pdfjs-dist')
+    // Configure PDF.js worker
+    pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`
+  }
+
+  return pdfjsLib
+}
 
 export interface OCRProgress {
   status: string
@@ -45,8 +58,11 @@ export async function extractTextFromPDF(
   pdfFile: File,
   onProgress?: (progress: OCRProgress) => void,
 ): Promise<string> {
+  // Import PDF.js dynamically (client-side only)
+  const pdfjs = await getPdfjsLib()
+
   const arrayBuffer = await pdfFile.arrayBuffer()
-  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise
+  const pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise
   const totalPages = pdf.numPages
   let extractedText = ''
 

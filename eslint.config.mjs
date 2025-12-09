@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     'out/**',
     'build/**',
     'next-env.d.ts',
+    // Ignore CSS files (Tailwind CSS v4 syntax)
+    '**/*.css',
   ]),
 ])
 

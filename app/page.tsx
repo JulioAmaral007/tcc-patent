@@ -2,6 +2,7 @@
 
 import {
   FileSearch,
+  FileSearchCorner,
   FileText,
   Shield,
   Sparkles,
@@ -138,7 +139,7 @@ export default function Home() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center shadow-glow">
-                <FileSearch className="w-5 h-5 text-primary-foreground" />
+                <FileSearchCorner className="w-5 h-5 text-foreground" />
               </div>
               <div>
                 <h1 className="text-xl font-semibold text-foreground">
