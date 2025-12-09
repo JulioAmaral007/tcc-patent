@@ -1,65 +1,325 @@
-import Image from "next/image";
+'use client'
+
+import {
+  FileSearch,
+  FileText,
+  Shield,
+  Sparkles,
+  Trash2,
+  Upload,
+} from 'lucide-react'
+import { useCallback, useState } from 'react'
+import { toast } from 'sonner'
+import { ErrorBox } from '@/components/ErrorBox'
+import { ImagePreview } from '@/components/ImagePreview'
+import { ProcessingProgress } from '@/components/ProcessingProgress'
+import { ResultViewer } from '@/components/ResultViewer'
+import { TextInputArea } from '@/components/TextInputArea'
+import { ThemeToggle } from '@/components/ThemeToggle'
+import { UploadArea } from '@/components/UploadArea'
+import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { analyzePatent } from '@/lib/api'
+import { type OCRProgress, processFile } from '@/lib/ocr'
 
 export default function Home() {
+  const [textInput, setTextInput] = useState('')
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [extractedText, setExtractedText] = useState('')
+  const [result, setResult] = useState<string | null>(null)
+  const [isProcessing, setIsProcessing] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [ocrProgress, setOcrProgress] = useState<OCRProgress | null>(null)
+  const [processingStage, setProcessingStage] = useState<'ocr' | 'api' | null>(
+    null,
+  )
+  const [activeTab, setActiveTab] = useState('text')
+
+  const handleFileSelect = useCallback((file: File) => {
+    setSelectedFile(file)
+    setExtractedText('')
+    setError(null)
+  }, [])
+
+  const handleClearFile = useCallback(() => {
+    setSelectedFile(null)
+    setExtractedText('')
+    setError(null)
+  }, [])
+
+  const handleClearAll = useCallback(() => {
+    setTextInput('')
+    setSelectedFile(null)
+    setExtractedText('')
+    setResult(null)
+    setError(null)
+    setOcrProgress(null)
+    setProcessingStage(null)
+  }, [])
+
+  const handleProcessOCR = useCallback(async () => {
+    if (!selectedFile) return
+
+    setIsProcessing(true)
+    setError(null)
+    setProcessingStage('ocr')
+    setOcrProgress({ status: 'Iniciando...', progress: 0 })
+
+    try {
+      const text = await processFile(selectedFile, (progress) => {
+        setOcrProgress(progress)
+      })
+
+      setExtractedText(text)
+      setTextInput((prev) => prev + (prev ? '\n\n' : '') + text)
+
+      toast.success('Texto extraído!', {
+        description: `${text.length.toLocaleString()} caracteres extraídos do arquivo.`,
+      })
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : 'Erro ao processar arquivo.'
+      setError(errorMessage)
+      toast.error('Erro no OCR', {
+        description: errorMessage,
+      })
+    } finally {
+      setIsProcessing(false)
+      setProcessingStage(null)
+      setOcrProgress(null)
+    }
+  }, [selectedFile])
+
+  const handleAnalyze = useCallback(async () => {
+    if (!textInput.trim()) {
+      toast.error('Texto vazio', {
+        description: 'Insira o texto da patente para análise.',
+      })
+      return
+    }
+
+    setIsProcessing(true)
+    setError(null)
+    setProcessingStage('api')
+
+    try {
+      const response = await analyzePatent(textInput)
+
+      if (response.success) {
+        setResult(response.result)
+        toast.success('Análise concluída!', {
+          description: 'O resultado está disponível no painel direito.',
+        })
+      } else {
+        throw new Error(response.error || 'Erro desconhecido.')
+      }
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : 'Erro ao analisar patente.'
+      setError(errorMessage)
+      toast.error('Erro na análise', {
+        description: errorMessage,
+      })
+    } finally {
+      setIsProcessing(false)
+      setProcessingStage(null)
+    }
+  }, [textInput])
+
+  const getFinalText = () => textInput
+  const hasContent = textInput.trim().length > 0 || selectedFile !== null
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="h-screen flex flex-col overflow-hidden gradient-surface">
+      {/* Header */}
+      <header className="border-b border-border bg-card/80 backdrop-blur-sm z-50 shrink-0">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center shadow-glow">
+                <FileSearch className="w-5 h-5 text-primary-foreground" />
+              </div>
+              <div>
+                <h1 className="text-xl font-semibold text-foreground">
+                  Patent Analyzer
+                </h1>
+                <p className="text-xs text-muted-foreground">
+                  Processamento inteligente de patentes
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Shield className="w-4 h-4" />
+                <span className="hidden sm:inline">
+                  Dados processados localmente
+                </span>
+              </div>
+              <ThemeToggle />
+            </div>
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+      </header>
+
+      {/* Main Content */}
+      <main className="flex-1 overflow-hidden container mx-auto px-4 py-6">
+        <div className="grid lg:grid-cols-2 gap-6 h-full">
+          {/* Left Panel - Input */}
+          <div className="flex flex-col gap-4 overflow-y-auto">
+            <Card className="p-6 bg-card shadow-sm">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-primary" />
+                  Entrada de Dados
+                </h2>
+                {hasContent && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleClearAll}
+                    className="text-muted-foreground hover:text-destructive"
+                  >
+                    <Trash2 className="w-4 h-4 mr-1" />
+                    Limpar
+                  </Button>
+                )}
+              </div>
+
+              <Tabs
+                value={activeTab}
+                onValueChange={setActiveTab}
+                className="w-full"
+              >
+                <TabsList className="grid w-full grid-cols-2 mb-4">
+                  <TabsTrigger value="text" className="gap-2">
+                    <FileText className="w-4 h-4" />
+                    Texto
+                  </TabsTrigger>
+                  <TabsTrigger value="upload" className="gap-2">
+                    <Upload className="w-4 h-4" />
+                    Upload
+                  </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="text" className="mt-0">
+                  <TextInputArea
+                    value={textInput}
+                    onChange={setTextInput}
+                    disabled={isProcessing}
+                    placeholder="Cole ou digite o texto da patente aqui. Você também pode extrair texto de imagens ou PDFs na aba Upload."
+                  />
+                </TabsContent>
+
+                <TabsContent value="upload" className="mt-0 space-y-4">
+                  <UploadArea
+                    onFileSelect={handleFileSelect}
+                    selectedFile={selectedFile}
+                    onClearFile={handleClearFile}
+                    isProcessing={isProcessing}
+                  />
+
+                  <ImagePreview file={selectedFile} />
+
+                  {selectedFile && !extractedText && (
+                    <Button
+                      onClick={handleProcessOCR}
+                      disabled={isProcessing}
+                      className="w-full gap-2 gradient-primary"
+                    >
+                      <Sparkles className="w-4 h-4" />
+                      Extrair Texto (OCR)
+                    </Button>
+                  )}
+
+                  {extractedText && (
+                    <Card className="p-4 bg-success/5 border-success/20">
+                      <p className="text-sm text-success font-medium mb-1">
+                        ✓ Texto extraído com sucesso
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {extractedText.length.toLocaleString()} caracteres
+                        adicionados ao campo de texto.
+                      </p>
+                    </Card>
+                  )}
+                </TabsContent>
+              </Tabs>
+            </Card>
+
+            {/* Progress & Error */}
+            <ProcessingProgress
+              progress={ocrProgress}
+              stage={processingStage}
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+
+            {error && (
+              <ErrorBox
+                message={error}
+                onDismiss={() => setError(null)}
+                onRetry={
+                  processingStage === 'ocr' ? handleProcessOCR : handleAnalyze
+                }
+              />
+            )}
+
+            {/* Analyze Button */}
+            <Button
+              onClick={handleAnalyze}
+              disabled={isProcessing || !textInput.trim()}
+              size="lg"
+              className="w-full gap-2 gradient-accent text-accent-foreground hover:opacity-90 transition-opacity"
+            >
+              <Sparkles className="w-5 h-5" />
+              Analisar Patente
+            </Button>
+
+            {/* Stats */}
+            {textInput.trim() && (
+              <div className="grid grid-cols-3 gap-3">
+                <Card className="p-3 text-center bg-card">
+                  <p className="text-2xl font-bold text-primary">
+                    {textInput
+                      .split(/\s+/)
+                      .filter(Boolean)
+                      .length.toLocaleString()}
+                  </p>
+                  <p className="text-xs text-muted-foreground">Palavras</p>
+                </Card>
+                <Card className="p-3 text-center bg-card">
+                  <p className="text-2xl font-bold text-primary">
+                    {textInput.length.toLocaleString()}
+                  </p>
+                  <p className="text-xs text-muted-foreground">Caracteres</p>
+                </Card>
+                <Card className="p-3 text-center bg-card">
+                  <p className="text-2xl font-bold text-primary">
+                    {textInput.split(/\n\n+/).filter(Boolean).length}
+                  </p>
+                  <p className="text-xs text-muted-foreground">Parágrafos</p>
+                </Card>
+              </div>
+            )}
+          </div>
+
+          {/* Right Panel - Results */}
+          <div className="flex flex-col overflow-hidden">
+            <ResultViewer
+              result={result}
+              isLoading={processingStage === 'api'}
+            />
+          </div>
         </div>
       </main>
+
+      {/* Footer */}
+      <footer className="border-t border-border bg-card/50 shrink-0">
+        <div className="container mx-auto px-4 py-4">
+          <p className="text-xs text-center text-muted-foreground">
+            Patent Analyzer • Processamento de patentes com OCR integrado
+          </p>
+        </div>
+      </footer>
     </div>
-  );
+  )
 }
