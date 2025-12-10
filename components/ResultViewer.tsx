@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Check, Copy, FileOutput, Sparkles } from 'lucide-react'
+import { exportToPDF } from '@/lib/pdf'
+import { Check, Copy, Download, FileOutput, Sparkles } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 
@@ -15,6 +16,7 @@ interface ResultViewerProps {
 
 export function ResultViewer({ result, isLoading }: ResultViewerProps) {
   const [copied, setCopied] = useState(false)
+  const [isExporting, setIsExporting] = useState(false)
 
   const handleCopy = async () => {
     if (!result) return
@@ -30,6 +32,28 @@ export function ResultViewer({ result, isLoading }: ResultViewerProps) {
       toast.error('Erro ao copiar', {
         description: 'Não foi possível copiar o texto.',
       })
+    }
+  }
+
+  const handleExportPDF = async () => {
+    if (!result) return
+
+    setIsExporting(true)
+    try {
+      await exportToPDF({
+        result,
+        title: 'Análise de Patente',
+        filename: 'analise-patente',
+      })
+      toast.success('PDF exportado!', {
+        description: 'O arquivo foi baixado com sucesso.',
+      })
+    } catch {
+      toast.error('Erro ao exportar', {
+        description: 'Não foi possível gerar o PDF.',
+      })
+    } finally {
+      setIsExporting(false)
     }
   }
 
@@ -83,24 +107,36 @@ export function ResultViewer({ result, isLoading }: ResultViewerProps) {
             Resultado da Análise
           </span>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleCopy}
-          className="gap-2"
-        >
-          {copied ? (
-            <>
-              <Check className="w-4 h-4 text-success" />
-              Copiado
-            </>
-          ) : (
-            <>
-              <Copy className="w-4 h-4" />
-              Copiar
-            </>
-          )}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExportPDF}
+            disabled={isExporting}
+            className="gap-2"
+          >
+            <Download className={`w-4 h-4 ${isExporting ? 'animate-bounce' : ''}`} />
+            {isExporting ? 'Exportando...' : 'PDF'}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleCopy}
+            className="gap-2"
+          >
+            {copied ? (
+              <>
+                <Check className="w-4 h-4 text-success" />
+                Copiado
+              </>
+            ) : (
+              <>
+                <Copy className="w-4 h-4" />
+                Copiar
+              </>
+            )}
+          </Button>
+        </div>
       </div>
       <ScrollArea className="flex-1 p-6">
         <pre className="whitespace-pre-wrap font-mono text-sm text-foreground leading-relaxed">

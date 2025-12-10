@@ -239,33 +239,6 @@ export default function Home() {
               <Sparkles className="w-5 h-5" />
               Analisar Patente
             </Button>
-
-            {/* Stats */}
-            {textInput.trim() && (
-              <div className="grid grid-cols-3 gap-3">
-                <Card className="p-3 text-center bg-card">
-                  <p className="text-2xl font-bold text-primary">
-                    {textInput
-                      .split(/\s+/)
-                      .filter(Boolean)
-                      .length.toLocaleString()}
-                  </p>
-                  <p className="text-xs text-muted-foreground">Palavras</p>
-                </Card>
-                <Card className="p-3 text-center bg-card">
-                  <p className="text-2xl font-bold text-primary">
-                    {textInput.length.toLocaleString()}
-                  </p>
-                  <p className="text-xs text-muted-foreground">Caracteres</p>
-                </Card>
-                <Card className="p-3 text-center bg-card">
-                  <p className="text-2xl font-bold text-primary">
-                    {textInput.split(/\n\n+/).filter(Boolean).length}
-                  </p>
-                  <p className="text-xs text-muted-foreground">Parágrafos</p>
-                </Card>
-              </div>
-            )}
           </div>
 
           {/* Right Panel - Results */}
