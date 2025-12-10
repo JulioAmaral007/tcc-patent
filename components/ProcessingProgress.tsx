@@ -1,7 +1,7 @@
-import { Loader2, Scan } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import type { OCRProgress } from '@/lib/ocr'
+import { Loader2, Scan } from 'lucide-react'
 
 interface ProcessingProgressProps {
   progress: OCRProgress | null

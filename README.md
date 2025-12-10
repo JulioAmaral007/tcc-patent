@@ -92,7 +92,7 @@ tcc-patent/
 │   ├── ui/               # Componentes de UI (Radix UI)
 │   ├── ErrorBox.tsx      # Componente de erro
 │   ├── ImagePreview.tsx  # Preview de imagens
-│   ├── LoadingSpinner.tsx # Spinner de carregamento
+│   ├── ui/spinner.tsx    # Spinner de carregamento
 │   ├── ProcessingProgress.tsx # Barra de progresso
 │   ├── ResultViewer.tsx  # Visualizador de resultados
 │   ├── TextInputArea.tsx # Área de entrada de texto

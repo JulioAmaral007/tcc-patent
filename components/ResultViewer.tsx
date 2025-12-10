@@ -1,12 +1,12 @@
 'use client'
 
-import { Check, Copy, FileOutput, Sparkles } from 'lucide-react'
-import { useState } from 'react'
-import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Check, Copy, FileOutput, Sparkles } from 'lucide-react'
+import { useState } from 'react'
+import { toast } from 'sonner'
 
 interface ResultViewerProps {
   result: string | null

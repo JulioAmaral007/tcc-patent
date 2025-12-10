@@ -1,12 +1,12 @@
 'use client'
 
-import { AlertCircle, FileImage, FileText, Upload, X } from 'lucide-react'
-import { useCallback, useState } from 'react'
-import { useDropzone } from 'react-dropzone'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { getFileTypeLabel, isValidFileType } from '@/lib/ocr'
 import { cn } from '@/lib/utils'
+import { AlertCircle, FileImage, FileText, Upload, X } from 'lucide-react'
+import { useCallback, useState } from 'react'
+import { useDropzone } from 'react-dropzone'
 
 interface UploadAreaProps {
   onFileSelect: (file: File) => void
@@ -119,7 +119,7 @@ export function UploadArea({
       ) : (
         <Card className="p-4 bg-card">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
               {selectedFile.type === 'application/pdf' ? (
                 <FileText className="w-5 h-5 text-primary" />
               ) : (
@@ -143,7 +143,7 @@ export function UploadArea({
                   e.stopPropagation()
                   onClearFile()
                 }}
-                className="flex-shrink-0 hover:bg-destructive/10 hover:text-destructive"
+                className="shrink-0 hover:bg-destructive/10 hover:text-destructive"
               >
                 <X className="w-4 h-4" />
               </Button>

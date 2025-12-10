@@ -1,8 +1,8 @@
 'use client'
 
+import { Card } from '@/components/ui/card'
 import { FileImage, FileText } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { Card } from '@/components/ui/card'
 
 interface ImagePreviewProps {
   file: File | null

@@ -1,28 +1,21 @@
 'use client'
 
-import {
-  FileSearch,
-  FileSearchCorner,
-  FileText,
-  Shield,
-  Sparkles,
-  Trash2,
-  Upload,
-} from 'lucide-react'
-import { useCallback, useState } from 'react'
-import { toast } from 'sonner'
 import { ErrorBox } from '@/components/ErrorBox'
+import { Footer } from '@/components/Footer'
+import { Header } from '@/components/Header'
 import { ImagePreview } from '@/components/ImagePreview'
 import { ProcessingProgress } from '@/components/ProcessingProgress'
 import { ResultViewer } from '@/components/ResultViewer'
 import { TextInputArea } from '@/components/TextInputArea'
-import { ThemeToggle } from '@/components/ThemeToggle'
 import { UploadArea } from '@/components/UploadArea'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { analyzePatent } from '@/lib/api'
 import { type OCRProgress, processFile } from '@/lib/ocr'
+import { FileText, Sparkles, Trash2, Upload } from 'lucide-react'
+import { useCallback, useState } from 'react'
+import { toast } from 'sonner'
 
 export default function Home() {
   const [textInput, setTextInput] = useState('')
@@ -133,35 +126,7 @@ export default function Home() {
 
   return (
     <div className="h-screen flex flex-col overflow-hidden gradient-surface">
-      {/* Header */}
-      <header className="border-b border-border bg-card/80 backdrop-blur-sm z-50 shrink-0">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center shadow-glow">
-                <FileSearchCorner className="w-5 h-5 text-foreground" />
-              </div>
-              <div>
-                <h1 className="text-xl font-semibold text-foreground">
-                  Patent Analyzer
-                </h1>
-                <p className="text-xs text-muted-foreground">
-                  Processamento inteligente de patentes
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <Shield className="w-4 h-4" />
-                <span className="hidden sm:inline">
-                  Dados processados localmente
-                </span>
-              </div>
-              <ThemeToggle />
-            </div>
-          </div>
-        </div>
-      </header>
+      <Header />
 
       {/* Main Content */}
       <main className="flex-1 overflow-hidden container mx-auto px-4 py-6">
@@ -312,15 +277,8 @@ export default function Home() {
           </div>
         </div>
       </main>
-
-      {/* Footer */}
-      <footer className="border-t border-border bg-card/50 shrink-0">
-        <div className="container mx-auto px-4 py-4">
-          <p className="text-xs text-center text-muted-foreground">
-            Patent Analyzer • Processamento de patentes com OCR integrado
-          </p>
-        </div>
-      </footer>
+      
+      <Footer />
     </div>
   )
 }

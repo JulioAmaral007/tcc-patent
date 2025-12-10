@@ -1,9 +1,8 @@
-import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
-import { JetBrains_Mono } from 'next/font/google'
-import './globals.css'
-import { ThemeProvider } from 'next-themes'
 import { Toaster } from '@/components/ui/sonner'
+import type { Metadata } from 'next'
+import { ThemeProvider } from 'next-themes'
+import { Inter, JetBrains_Mono } from 'next/font/google'
+import './globals.css'
 
 const inter = Inter({
   variable: '--font-inter',
@@ -28,7 +27,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body
         className={`${inter.variable} ${jetbrainsMono.variable} antialiased`}
       >

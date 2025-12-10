@@ -1,5 +1,5 @@
-import { FileText } from 'lucide-react'
 import { Textarea } from '@/components/ui/textarea'
+import { FileText } from 'lucide-react'
 
 interface TextInputAreaProps {
   value: string
