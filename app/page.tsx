@@ -1,8 +1,10 @@
 'use client'
 
+import { ChatPanel } from '@/components/ChatPanel'
 import { ErrorBox } from '@/components/ErrorBox'
 import { Footer } from '@/components/Footer'
 import { Header } from '@/components/Header'
+import { HistorySidebar } from '@/components/HistorySidebar'
 import { ImagePreview } from '@/components/ImagePreview'
 import { ProcessingProgress } from '@/components/ProcessingProgress'
 import { ResultViewer } from '@/components/ResultViewer'
@@ -12,7 +14,11 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { analyzePatent } from '@/lib/api'
-import { type OCRProgress, processFile } from '@/lib/ocr'
+import {
+  saveAnalysisToHistory,
+  type AnalysisHistory,
+} from '@/lib/history'
+import { processFile, type OCRProgress } from '@/lib/ocr'
 import { FileText, Sparkles, Trash2, Upload } from 'lucide-react'
 import { useCallback, useState } from 'react'
 import { toast } from 'sonner'
@@ -29,6 +35,7 @@ export default function Home() {
     null,
   )
   const [activeTab, setActiveTab] = useState('text')
+  const [currentAnalysisInput, setCurrentAnalysisInput] = useState<string>('')
 
   const handleFileSelect = useCallback((file: File) => {
     setSelectedFile(file)
@@ -47,9 +54,21 @@ export default function Home() {
     setSelectedFile(null)
     setExtractedText('')
     setResult(null)
+    setCurrentAnalysisInput('')
     setError(null)
     setOcrProgress(null)
     setProcessingStage(null)
+  }, [])
+
+  const handleSelectAnalysis = useCallback((analysis: AnalysisHistory) => {
+    setTextInput(analysis.inputText)
+    setResult(analysis.result)
+    setCurrentAnalysisInput(analysis.inputText)
+    setSelectedFile(null)
+    setExtractedText('')
+    toast.success('Análise carregada', {
+      description: 'A análise foi restaurada do histórico.',
+    })
   }, [])
 
   const handleProcessOCR = useCallback(async () => {
@@ -102,6 +121,16 @@ export default function Home() {
 
       if (response.success) {
         setResult(response.result)
+        setCurrentAnalysisInput(textInput)
+        
+        // Salva no histórico
+        saveAnalysisToHistory(
+          textInput,
+          response.result,
+          selectedFile ? 'image' : 'text',
+          selectedFile?.name,
+        )
+        
         toast.success('Análise concluída!', {
           description: 'O resultado está disponível no painel direito.',
         })
@@ -119,20 +148,35 @@ export default function Home() {
       setIsProcessing(false)
       setProcessingStage(null)
     }
-  }, [textInput])
+  }, [textInput, selectedFile])
 
   const getFinalText = () => textInput
   const hasContent = textInput.trim().length > 0 || selectedFile !== null
+
+  const hasResult = result !== null
+  const showChat = hasResult
 
   return (
     <div className="h-screen flex flex-col overflow-hidden gradient-surface">
       <Header />
 
       {/* Main Content */}
-      <main className="flex-1 overflow-hidden container mx-auto px-4 py-6">
-        <div className="grid lg:grid-cols-2 gap-6 h-full">
-          {/* Left Panel - Input */}
-          <div className="flex flex-col gap-4 overflow-y-auto">
+      <main className="flex-1 overflow-hidden flex gap-6">
+        {/* History Sidebar - Always Visible */}
+        <HistorySidebar onSelectAnalysis={handleSelectAnalysis} />
+
+        <div className="flex-1 overflow-hidden container mx-auto px-4 py-6">
+          <div className="flex gap-6 h-full">
+
+            {/* Left Panel - Input or Chat */}
+            <div className="flex flex-col gap-4 overflow-hidden flex-1 lg:flex-[0_0_50%]">
+            {showChat && result ? (
+              <ChatPanel
+                analysisResult={result}
+                inputText={currentAnalysisInput}
+              />
+            ) : (
+              <div className="flex flex-col gap-4 overflow-y-auto">
             <Card className="p-6 bg-card shadow-sm">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
@@ -266,14 +310,17 @@ export default function Home() {
                 </Card>
               </div>
             )}
+              </div>
+            )}
           </div>
 
-          {/* Right Panel - Results */}
-          <div className="flex flex-col overflow-hidden">
-            <ResultViewer
-              result={result}
-              isLoading={processingStage === 'api'}
-            />
+            {/* Right Panel - Results */}
+            <div className="flex flex-col overflow-hidden flex-1 lg:flex-[0_0_50%]">
+              <ResultViewer
+                result={result}
+                isLoading={processingStage === 'api'}
+              />
+            </div>
           </div>
         </div>
       </main>
