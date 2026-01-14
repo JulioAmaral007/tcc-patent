@@ -10,18 +10,28 @@ import { ProcessingProgress } from '@/components/ProcessingProgress'
 import { ResultViewer } from '@/components/ResultViewer'
 import { TextInputArea } from '@/components/TextInputArea'
 import { UploadArea } from '@/components/UploadArea'
+import { SearchSettingsModal, defaultSearchParams, type SearchParams, type SearchType } from '@/components/SearchSettingsModal'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { analyzePatent } from '@/lib/api'
+import { 
+  analyzePatent, 
+  formatSimilarityResults, 
+  formatImageSimilarityResults,
+  performTextSearch,
+  performImageSearch 
+} from '@/lib/api'
+import type { SearchByTextResponse, ImagesSearchResponse } from '@/lib/types'
 import {
   saveAnalysisToHistory,
   type AnalysisHistory,
 } from '@/lib/history'
 import { processFile, type OCRProgress } from '@/lib/ocr'
-import { FileText, Sparkles, Trash2, Upload } from 'lucide-react'
+import { FileText, Sparkles, Trash2, Upload, Search, FileSearchIcon, ArrowRight } from 'lucide-react'
 import { useCallback, useState } from 'react'
 import { toast } from 'sonner'
+import { ThemeToggle } from '@/components/ThemeToggle'
+
 
 export default function Home() {
   const [textInput, setTextInput] = useState('')
@@ -31,11 +41,31 @@ export default function Home() {
   const [isProcessing, setIsProcessing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [ocrProgress, setOcrProgress] = useState<OCRProgress | null>(null)
-  const [processingStage, setProcessingStage] = useState<'ocr' | 'api' | null>(
+  const [processingStage, setProcessingStage] = useState<'ocr' | 'api' | 'similarity' | null>(
     null,
   )
   const [activeTab, setActiveTab] = useState('text')
   const [currentAnalysisInput, setCurrentAnalysisInput] = useState<string>('')
+  
+  // Handler para trocar de aba e ajustar searchType automaticamente
+  const handleTabChange = useCallback((newTab: string) => {
+    setActiveTab(newTab)
+    // Ajusta o searchType baseado na aba selecionada
+    setSearchParams(prev => ({
+      ...prev,
+      searchType: newTab === 'text' ? 'similarity' : 'image_search',
+    }))
+  }, [])
+  
+  // Search parameters state
+  const [searchParams, setSearchParams] = useState<SearchParams>({
+    ...defaultSearchParams,
+    searchType: 'similarity', // Default for text
+  })
+  const [similarityResults, setSimilarityResults] = useState<SearchByTextResponse | ImagesSearchResponse | null>(null)
+
+  // Determina se tem resultado (modo chat)
+  const hasResult = result !== null
 
   const handleFileSelect = useCallback((file: File) => {
     setSelectedFile(file)
@@ -58,6 +88,12 @@ export default function Home() {
     setError(null)
     setOcrProgress(null)
     setProcessingStage(null)
+  }, [])
+
+  const handleNewAnalysis = useCallback(() => {
+    setResult(null)
+    setCurrentAnalysisInput('')
+    setSimilarityResults(null)
   }, [])
 
   const handleSelectAnalysis = useCallback((analysis: AnalysisHistory) => {
@@ -132,7 +168,7 @@ export default function Home() {
         )
         
         toast.success('Análise concluída!', {
-          description: 'O resultado está disponível no painel direito.',
+          description: 'Agora você pode tirar dúvidas sobre o resultado.',
         })
       } else {
         throw new Error(response.error || 'Erro desconhecido.')
@@ -150,35 +186,194 @@ export default function Home() {
     }
   }, [textInput, selectedFile])
 
-  const getFinalText = () => textInput
+  // Unified submit handler based on searchType
+  const handleSubmit = useCallback(async () => {
+    const isTextMode = activeTab === 'text'
+    const currentSearchType = searchParams.searchType
+    
+    // Validation
+    if (isTextMode && !textInput.trim()) {
+      toast.error('Texto vazio', {
+        description: 'Insira o texto para continuar.',
+      })
+      return
+    }
+
+    if (!isTextMode && !selectedFile) {
+      toast.error('Nenhum arquivo selecionado', {
+        description: 'Selecione uma imagem para continuar.',
+      })
+      return
+    }
+
+    setIsProcessing(true)
+    setError(null)
+    setSimilarityResults(null)
+
+
+    try {
+      // Determine which operation to run based on mode and searchType
+      if (isTextMode) {
+        if (currentSearchType === 'analyze') {
+          // Analyze with AI
+          setProcessingStage('api')
+          const response = await analyzePatent(textInput)
+
+          if (response.success) {
+            setResult(response.result)
+            setCurrentAnalysisInput(textInput)
+            saveAnalysisToHistory(textInput, response.result, 'text')
+            toast.success('Análise concluída!', {
+              description: 'Agora você pode tirar dúvidas sobre o resultado.',
+            })
+          } else {
+            throw new Error(response.error || 'Erro desconhecido.')
+          }
+        } else {
+          // Similarity search (embed -> similarity)
+          setProcessingStage('similarity')
+          const response = await performTextSearch({
+            text: textInput,
+            similarity_threshold: searchParams.similarity_threshold,
+            max_results: searchParams.max_results,
+            use_chunks: searchParams.use_chunks,
+          })
+          
+          setSimilarityResults(response)
+          const formattedResult = formatSimilarityResults(response)
+          setResult(formattedResult)
+          setCurrentAnalysisInput(textInput)
+          
+          toast.success('Busca concluída!', {
+            description: `Encontradas ${response.total_found} patentes similares.`,
+          })
+        }
+      } else {
+        // Image mode - always image search
+        setProcessingStage('similarity')
+        const response = await performImageSearch({
+          file: selectedFile!,
+          similarity_threshold: searchParams.similarity_threshold,
+          max_results: searchParams.max_results,
+        })
+        
+        setSimilarityResults(response)
+        const formattedResult = formatImageSimilarityResults(response)
+        setResult(formattedResult)
+        
+        toast.success('Busca concluída!', {
+          description: `Encontradas ${response.total_found} imagens similares.`,
+        })
+      }
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : 'Erro ao processar.'
+      setError(errorMessage)
+      toast.error('Erro', {
+        description: errorMessage,
+      })
+    } finally {
+      setIsProcessing(false)
+      setProcessingStage(null)
+    }
+  }, [textInput, selectedFile, searchParams, activeTab])
+
   const hasContent = textInput.trim().length > 0 || selectedFile !== null
 
-  const hasResult = result !== null
-  const showChat = hasResult
+  // ===== MODO CHAT (após ter resultado) =====
+  if (hasResult && result) {
+    return (
+      <div className="h-screen flex flex-col overflow-hidden gradient-surface">
+        <Header />
 
+        <main className="flex-1 overflow-hidden flex animate-in fade-in duration-300">
+          {/* History Sidebar - Retraído por padrão */}
+          <HistorySidebar onSelectAnalysis={handleSelectAnalysis} />
+
+          {/* Chat Panel - Área Principal */}
+          <div className="flex-1 overflow-hidden container mx-auto px-4 py-6">
+            <div className="h-full flex flex-col">
+              {/* Botão para nova análise */}
+              <div className="mb-4 flex items-center justify-between">
+                <Button
+                  variant="outline"
+                  onClick={handleNewAnalysis}
+                  className="gap-2"
+                >
+                  <ArrowRight className="w-4 h-4 rotate-180" />
+                  Nova Análise
+                </Button>
+                <div className="text-sm text-muted-foreground">
+                  Tire suas dúvidas sobre o resultado
+                </div>
+              </div>
+
+              {/* Main Content Area: Chat + Result */}
+              <div className="flex-1 flex flex-col lg:flex-row gap-6 min-h-0">
+                {/* Chat Panel - Esquerda */}
+                <div className="flex-[4] min-h-0">
+                  <ChatPanel
+                    analysisResult={result}
+                    inputText={currentAnalysisInput}
+                  />
+                </div>
+                
+                {/* Result Panel - Direita */}
+                <div className="flex-[6] min-h-0 flex flex-col">
+                  <ResultViewer 
+                    result={result} 
+                    isLoading={false} 
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </main>
+        
+        <Footer />
+      </div>
+    )
+  }
+
+  // ===== MODO ENTRADA DE DADOS (estado inicial) =====
   return (
     <div className="h-screen flex flex-col overflow-hidden gradient-surface">
-      <Header />
+      {/* Header Minimalista */}
+      <header className="border-b border-border/50 bg-card/50 backdrop-blur-sm z-50 shrink-0">
+        <div className="container mx-auto px-4 py-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl gradient-primary flex items-center justify-center shadow-glow">
+                <FileSearchIcon className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h1 className="text-lg font-semibold text-foreground">
+                  Patent Analyzer
+                </h1>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <ThemeToggle />
+            </div>
+          </div>
+        </div>
+      </header>
 
-      {/* Main Content */}
-      <main className="flex-1 overflow-hidden flex gap-6">
-        {/* History Sidebar - Always Visible */}
+      <main className="flex-1 overflow-hidden flex">
+        {/* History Sidebar */}
         <HistorySidebar onSelectAnalysis={handleSelectAnalysis} />
 
-        <div className="flex-1 overflow-hidden container mx-auto px-4 py-6">
-          <div className="flex gap-6 h-full">
-
-            {/* Left Panel - Input or Chat */}
-            <div className="flex flex-col gap-4 overflow-hidden flex-1 lg:flex-[0_0_50%]">
-            {showChat && result ? (
-              <ChatPanel
-                analysisResult={result}
-                inputText={currentAnalysisInput}
-              />
-            ) : (
-              <div className="flex flex-col gap-4 overflow-y-auto">
-            <Card className="p-6 bg-card shadow-sm">
-              <div className="flex items-center justify-between mb-4">
+        {/* Área de Entrada Centralizada */}
+        <div className="flex-1 overflow-y-auto flex items-start justify-center py-6 px-4 scrollbar-hide">
+          <div className="w-full max-w-2xl space-y-6 animate-in fade-in duration-700 slide-in-from-bottom-4">
+            
+            {/* Card Principal de Entrada */}
+            <Card className="p-6 bg-card/80 backdrop-blur-md shadow-soft border-border/30 rounded-3xl relative overflow-hidden">
+              {/* Subtle background glow */}
+              <div className="absolute -top-12 -right-12 w-32 h-32 bg-primary/5 rounded-full blur-2xl pointer-events-none" />
+              <div className="absolute -bottom-12 -left-12 w-32 h-32 bg-blue-500/5 rounded-full blur-2xl pointer-events-none" />
+              
+              <div className="relative flex items-center justify-between mb-4">
                 <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
                   <FileText className="w-5 h-5 text-primary" />
                   Entrada de Dados
@@ -196,17 +391,17 @@ export default function Home() {
                 )}
               </div>
 
-              <Tabs
-                value={activeTab}
-                onValueChange={setActiveTab}
-                className="w-full"
+              <Tabs 
+                value={activeTab} 
+                onValueChange={handleTabChange} 
+                className="w-full space-y-6"
               >
-                <TabsList className="grid w-full grid-cols-2 mb-4">
-                  <TabsTrigger value="text" className="gap-2">
+                <TabsList className="grid w-full grid-cols-2 p-1 h-11 bg-secondary/30 rounded-2xl">
+                  <TabsTrigger value="text" className="gap-2 rounded-xl">
                     <FileText className="w-4 h-4" />
                     Texto
                   </TabsTrigger>
-                  <TabsTrigger value="upload" className="gap-2">
+                  <TabsTrigger value="upload" className="gap-2 rounded-xl">
                     <Upload className="w-4 h-4" />
                     Upload
                   </TabsTrigger>
@@ -217,7 +412,7 @@ export default function Home() {
                     value={textInput}
                     onChange={setTextInput}
                     disabled={isProcessing}
-                    placeholder="Cole ou digite o texto da patente aqui. Você também pode extrair texto de imagens ou PDFs na aba Upload."
+                    placeholder="Cole ou digite o texto da patente aqui..."
                   />
                 </TabsContent>
 
@@ -257,6 +452,41 @@ export default function Home() {
               </Tabs>
             </Card>
 
+            {/* Botão de Submit Único */}
+            <div className="flex items-stretch gap-3">
+              <div className="flex-none">
+                <SearchSettingsModal
+                  params={searchParams}
+                  onParamsChange={setSearchParams}
+                  mode={activeTab === 'text' ? 'text' : 'image'}
+                  disabled={isProcessing}
+                />
+              </div>
+              <Button
+                onClick={handleSubmit}
+                disabled={isProcessing || (activeTab === 'text' ? !textInput.trim() : !selectedFile)}
+                size="lg"
+                className="flex-1 gap-3 bg-gradient-to-r from-purple-500 via-violet-500 to-blue-500 hover:from-purple-600 hover:via-violet-600 hover:to-blue-600 text-white rounded-2xl h-14 text-base font-semibold shadow-soft hover:shadow-glow transition-all duration-300 hover:scale-[1.01] active:scale-[0.98]"
+              >
+                {isProcessing ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Processando...
+                  </>
+                ) : activeTab === 'text' ? (
+                  <>
+                    {searchParams.searchType === 'analyze' ? (
+                      <><Sparkles className="w-5 h-5" /> Analisar com IA</>
+                    ) : (
+                      <><Search className="w-5 h-5" /> Buscar Similares</>
+                    )}
+                  </>
+                ) : (
+                  <><Search className="w-5 h-5" /> Buscar por Imagem</>
+                )}
+              </Button>
+            </div>
+
             {/* Progress & Error */}
             <ProcessingProgress
               progress={ocrProgress}
@@ -267,60 +497,10 @@ export default function Home() {
               <ErrorBox
                 message={error}
                 onDismiss={() => setError(null)}
-                onRetry={
-                  processingStage === 'ocr' ? handleProcessOCR : handleAnalyze
-                }
+                onRetry={handleSubmit}
               />
             )}
 
-            {/* Analyze Button */}
-            <Button
-              onClick={handleAnalyze}
-              disabled={isProcessing || !textInput.trim()}
-              size="lg"
-              className="w-full gap-2 gradient-accent text-accent-foreground hover:opacity-90 transition-opacity"
-            >
-              <Sparkles className="w-5 h-5" />
-              Analisar Patente
-            </Button>
-
-            {/* Stats */}
-            {textInput.trim() && (
-              <div className="grid grid-cols-3 gap-3">
-                <Card className="p-3 text-center bg-card">
-                  <p className="text-2xl font-bold text-primary">
-                    {textInput
-                      .split(/\s+/)
-                      .filter(Boolean)
-                      .length.toLocaleString()}
-                  </p>
-                  <p className="text-xs text-muted-foreground">Palavras</p>
-                </Card>
-                <Card className="p-3 text-center bg-card">
-                  <p className="text-2xl font-bold text-primary">
-                    {textInput.length.toLocaleString()}
-                  </p>
-                  <p className="text-xs text-muted-foreground">Caracteres</p>
-                </Card>
-                <Card className="p-3 text-center bg-card">
-                  <p className="text-2xl font-bold text-primary">
-                    {textInput.split(/\n\n+/).filter(Boolean).length}
-                  </p>
-                  <p className="text-xs text-muted-foreground">Parágrafos</p>
-                </Card>
-              </div>
-            )}
-              </div>
-            )}
-          </div>
-
-            {/* Right Panel - Results */}
-            <div className="flex flex-col overflow-hidden flex-1 lg:flex-[0_0_50%]">
-              <ResultViewer
-                result={result}
-                isLoading={processingStage === 'api'}
-              />
-            </div>
           </div>
         </div>
       </main>
