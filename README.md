@@ -84,49 +84,64 @@ npm run dev
 
 ```text
 tcc-patent/
-├── app/                    # App Router do Next.js
-│   ├── layout.tsx         # Layout principal
-│   ├── page.tsx           # Página inicial
-│   └── globals.css        # Estilos globais
-├── components/            # Componentes React
-│   ├── ui/               # Componentes de UI (Radix UI)
-│   ├── ErrorBox.tsx      # Componente de erro
-│   ├── ImagePreview.tsx  # Preview de imagens
-│   ├── ui/spinner.tsx    # Spinner de carregamento
-│   ├── ProcessingProgress.tsx # Barra de progresso
-│   ├── ResultViewer.tsx  # Visualizador de resultados
-│   ├── TextInputArea.tsx # Área de entrada de texto
-│   ├── ThemeToggle.tsx   # Toggle de tema
-│   └── UploadArea.tsx    # Área de upload
-├── lib/                  # Utilitários e lógica
-│   ├── api.ts           # Integração com API
-│   ├── ocr.ts           # Lógica de OCR
-│   └── utils.ts         # Funções utilitárias
-└── public/              # Arquivos estáticos
+├── app/                          # App Router do Next.js
+│   ├── _actions/                 # Server Actions (lado do servidor)
+│   │   └── patent-actions.ts 
+│   ├── layout.tsx                # Layout principal
+│   ├── page.tsx                  # Página inicial
+│   └── globals.css               # Estilos globais
+├── components/                   # Componentes React
+│   ├── ui/                       # Componentes de UI (Radix UI)
+│   └── ...                       # Outros componentes
+├── lib/                          # Utilitários e lógica
+│   ├── patent-api-utils.ts       # Configuração Axios (lado do servidor)
+│   ├── api.ts                    # Wrapper de API (lado do cliente)
+│   ├── types.ts                  # Tipos TypeScript
+│   ├── ocr.ts                    # Lógica de OCR
+│   └── utils.ts                  # Funções utilitárias
+├── docs/                         # Documentação
+│   └── ENV_SETUP.md              # Configuração de variáveis de ambiente
+└── public/                       # Arquivos estáticos
 ```
 
-## 🔌 Integração com API
+## 🔌 Arquitetura de API
 
-A aplicação está preparada para integração com uma API de análise de patentes. Atualmente, a função `analyzePatent` em `lib/api.ts` retorna uma resposta mockada.
+A aplicação utiliza **Server Actions** do Next.js para garantir que todas as chamadas a APIs externas sejam feitas exclusivamente no lado do servidor.
 
-Para conectar com sua API:
+### Fluxo de Comunicação
 
-1. Edite o arquivo `lib/api.ts`
-2. Descomente o código da chamada real à API
-3. Configure a URL da API na constante `API_URL`
-4. Ajuste os headers e formato da requisição conforme necessário
-
-Exemplo:
-
-```typescript
-const response = await fetch(API_URL, {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-  },
-  body: JSON.stringify({ text }),
-});
 ```
+Frontend (Browser)
+       │
+       ▼
+  Server Actions    ◄──── app/_actions/patent-actions.ts ('use server')
+       │
+       ▼
+  API Externa       ◄──── http://212.85.22.109:8001
+```
+
+### Benefícios desta Arquitetura
+
+✅ **Segurança**: O `PATENT_API_TOKEN` e a URL da API externa nunca são expostos ao navegador.  
+✅ **Simplicidade**: Sem necessidade de gerenciar múltiplas API Routes e endpoints HTTP internos.  
+✅ **Performance**: Menos overhead de rede entre o frontend e as funções de backend.  
+✅ **Tipagem**: Tipagem completa de ponta a ponta entre o cliente e o servidor.  
+
+### Padrão de Resposta
+
+Todas as API Routes retornam respostas padronizadas:
+
+```json
+// Sucesso
+{ "success": true, "data": {...} }
+
+// Erro
+{ "success": false, "error": "mensagem de erro" }
+```
+
+### Configuração
+
+Para configurar as credenciais da API externa, consulte [docs/ENV_SETUP.md](docs/ENV_SETUP.md).
 
 ## 🎨 Personalização
 
