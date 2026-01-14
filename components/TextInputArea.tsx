@@ -27,7 +27,7 @@ export function TextInputArea({
         onChange={(e) => onChange(e.target.value)}
         disabled={disabled}
         placeholder={placeholder || 'Cole ou digite o texto da patente aqui...'}
-        className="flex-1 min-h-[200px] resize-none font-mono text-sm bg-card border-input focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+        className="flex-1 min-h-[200px] resize-none font-mono text-sm bg-background/50 border-border/50 rounded-2xl focus:ring-2 focus:ring-primary/20 focus:border-primary/50 transition-all placeholder:text-muted-foreground/60"
       />
       <p className="text-xs text-muted-foreground">
         {value.length.toLocaleString()} caracteres

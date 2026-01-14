@@ -73,9 +73,9 @@ export function UploadArea({
         <Card
           {...getRootProps()}
           className={cn(
-            'relative border-2 border-dashed cursor-pointer transition-all duration-200',
-            'hover:border-primary hover:bg-primary/5',
-            isDragActive && 'border-primary bg-primary/10 shadow-glow',
+            'relative border-2 border-dashed cursor-pointer transition-all duration-300 rounded-2xl',
+            'hover:border-primary/60 hover:bg-primary/5',
+            isDragActive && 'border-primary bg-primary/10 shadow-glow scale-[1.01]',
             isProcessing && 'opacity-50 cursor-not-allowed',
             error && 'border-destructive',
           )}
@@ -84,8 +84,8 @@ export function UploadArea({
           <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
             <div
               className={cn(
-                'w-14 h-14 rounded-full flex items-center justify-center mb-4 transition-colors',
-                isDragActive ? 'bg-primary/20' : 'bg-secondary',
+                'w-16 h-16 rounded-2xl flex items-center justify-center mb-4 transition-all duration-300 shadow-sm',
+                isDragActive ? 'bg-primary/20 scale-110 shadow-glow' : 'bg-secondary/40',
               )}
             >
               <Upload
@@ -95,31 +95,31 @@ export function UploadArea({
                 )}
               />
             </div>
-            <p className="text-sm font-medium text-foreground mb-1">
+            <p className="text-sm font-semibold text-foreground mb-1">
               {isDragActive
-                ? 'Solte o arquivo aqui'
-                : 'Arraste e solte um arquivo'}
+                ? 'Solte o arquivo para analisar'
+                : 'Arraste e solte o arquivo da patente'}
             </p>
-            <p className="text-xs text-muted-foreground mb-3">
-              ou clique para selecionar
+            <p className="text-xs text-muted-foreground mb-4 max-w-[200px]">
+              Suporta documentos técnicos (Imagem/PDF) de até 10MB
             </p>
-            <div className="flex gap-2">
-              <span className="px-2 py-1 text-xs rounded-md bg-secondary text-secondary-foreground">
+            <div className="flex gap-3">
+              <span className="px-4 py-2 text-xs rounded-full bg-secondary/60 text-secondary-foreground font-semibold border border-border/30">
                 PNG
               </span>
-              <span className="px-2 py-1 text-xs rounded-md bg-secondary text-secondary-foreground">
+              <span className="px-4 py-2 text-xs rounded-full bg-secondary/60 text-secondary-foreground font-semibold border border-border/30">
                 JPG
               </span>
-              <span className="px-2 py-1 text-xs rounded-md bg-secondary text-secondary-foreground">
+              <span className="px-4 py-2 text-xs rounded-full bg-secondary/60 text-secondary-foreground font-semibold border border-border/30">
                 PDF
               </span>
             </div>
           </div>
         </Card>
       ) : (
-        <Card className="p-4 bg-card">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+        <Card className="p-4 bg-card/80 rounded-2xl border-border/30">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
               {selectedFile.type === 'application/pdf' ? (
                 <FileText className="w-5 h-5 text-primary" />
               ) : (
