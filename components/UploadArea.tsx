@@ -73,7 +73,7 @@ export function UploadArea({
         <Card
           {...getRootProps()}
           className={cn(
-            'relative border-2 border-dashed cursor-pointer transition-all duration-300 rounded-2xl',
+            'relative border-2 border-dashed cursor-pointer transition-all duration-300 rounded-lg',
             'hover:border-primary/60 hover:bg-primary/5',
             isDragActive && 'border-primary bg-primary/10 shadow-glow scale-[1.01]',
             isProcessing && 'opacity-50 cursor-not-allowed',
@@ -84,7 +84,7 @@ export function UploadArea({
           <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
             <div
               className={cn(
-                'w-16 h-16 rounded-2xl flex items-center justify-center mb-4 transition-all duration-300 shadow-sm',
+                'w-16 h-16 rounded-lg flex items-center justify-center mb-4 transition-all duration-300 shadow-sm',
                 isDragActive ? 'bg-primary/20 scale-110 shadow-glow' : 'bg-secondary/40',
               )}
             >
@@ -117,9 +117,9 @@ export function UploadArea({
           </div>
         </Card>
       ) : (
-        <Card className="p-4 bg-card/80 rounded-2xl border-border/30">
+        <Card className="p-4 bg-card/80 rounded-lg border-border/30">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+            <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
               {selectedFile.type === 'application/pdf' ? (
                 <FileText className="w-5 h-5 text-primary" />
               ) : (
