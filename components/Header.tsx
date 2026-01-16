@@ -1,7 +1,5 @@
-'use client'
-
 import { ThemeToggle } from '@/components/ThemeToggle'
-import { FileSearchCorner } from 'lucide-react'
+import Image from 'next/image'
 
 export function Header() {
   return (
@@ -9,8 +7,8 @@ export function Header() {
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center shadow-glow">
-              <FileSearchCorner className="w-5 h-5 text-foreground" />
+            <div className="w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center shadow-glow">
+              <Image src="/icon.png" alt="Patent Analyzer Logo" width={40} height={40} className="object-cover" />
             </div>
             <div>
               <h1 className="text-xl font-semibold text-foreground">

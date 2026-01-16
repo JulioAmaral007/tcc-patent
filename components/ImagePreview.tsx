@@ -3,6 +3,7 @@
 import { Card } from '@/components/ui/card'
 import { FileImage, FileText } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import Image from 'next/image'
 
 interface ImagePreviewProps {
   file: File | null
@@ -13,16 +14,20 @@ export function ImagePreview({ file }: ImagePreviewProps) {
 
   useEffect(() => {
     if (!file) {
-      setPreview(null)
-      return
+      const timer = setTimeout(() => setPreview(null), 0)
+      return () => clearTimeout(timer)
     }
 
     if (file.type.startsWith('image/')) {
       const url = URL.createObjectURL(file)
-      setPreview(url)
-      return () => URL.revokeObjectURL(url)
+      const timer = setTimeout(() => setPreview(url), 0)
+      return () => {
+        clearTimeout(timer)
+        URL.revokeObjectURL(url)
+      }
     } else {
-      setPreview(null)
+      const timer = setTimeout(() => setPreview(null), 0)
+      return () => clearTimeout(timer)
     }
   }, [file])
 
@@ -42,10 +47,12 @@ export function ImagePreview({ file }: ImagePreviewProps) {
     return (
       <Card className="overflow-hidden bg-muted/50">
         <div className="relative aspect-video">
-          <img
+          <Image
             src={preview}
-            alt="Preview do arquivo"
-            className="absolute inset-0 w-full h-full object-contain"
+            alt={`Preview do arquivo ${file.name}`}
+            fill
+            className="object-contain"
+            unoptimized
           />
         </div>
         <div className="p-3 border-t border-border">

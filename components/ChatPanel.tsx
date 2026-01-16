@@ -5,9 +5,8 @@ import { Card } from '@/components/ui/card'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Textarea } from '@/components/ui/textarea'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Send, Bot, User, Sparkles } from 'lucide-react'
+import { Send, Bot, User } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
-import { toast } from 'sonner'
 
 interface ChatMessage {
   id: string
@@ -18,10 +17,9 @@ interface ChatMessage {
 
 interface ChatPanelProps {
   analysisResult: string
-  inputText: string
 }
 
-export function ChatPanel({ analysisResult, inputText }: ChatPanelProps) {
+export function ChatPanel({ analysisResult }: ChatPanelProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)

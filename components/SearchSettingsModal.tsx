@@ -22,7 +22,7 @@ import { ParameterSlider } from '@/components/ParameterSlider'
 import { SLIDER_CONFIGS, API_DEFAULTS } from '@/lib/types'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
-import { Settings2, RotateCcw, Layers, Image, FileText, Zap, Check, Sparkles, Search } from 'lucide-react'
+import { Settings2, RotateCcw, Layers, Image as ImageIcon, FileText, Zap, Check, Sparkles, Search } from 'lucide-react'
 
 export type SearchType = 'similarity' | 'image_search' | 'analyze'
 
@@ -101,7 +101,7 @@ export function SearchSettingsModal({
       ]
     } else {
       return [
-        { value: 'image_search', label: 'Busca por Imagem', icon: Image, description: 'Encontra patentes com imagens similares' },
+        { value: 'image_search', label: 'Busca por Imagem', icon: ImageIcon, description: 'Encontra patentes com imagens similares' },
       ]
     }
   }
@@ -117,7 +117,7 @@ export function SearchSettingsModal({
           variant="outline"
           size="icon"
           disabled={disabled}
-          className="shrink-0 relative h-14 w-14 rounded-2xl border-border/40 bg-card/50 backdrop-blur-sm hover:bg-secondary/50 shadow-soft"
+          className="shrink-0 relative h-14 w-14 rounded-xl border-border/40 bg-card/50 backdrop-blur-sm hover:bg-secondary/50 shadow-soft"
           title="Configurações Avançadas"
         >
           <Settings2 className="w-5 h-5 text-muted-foreground" />
@@ -139,35 +139,37 @@ export function SearchSettingsModal({
         </DialogHeader>
 
         <div className="space-y-6 py-4">
-          {/* Search Type Selector */}
-          <div className="p-4 rounded-lg bg-secondary/30 border border-border/50">
-            <div className="flex items-center gap-2 mb-3">
-              <Zap className="w-4 h-4 text-primary" />
-              <span className="text-sm font-medium text-foreground">Tipo de Operação</span>
+          {/* Search Type Selector - Only show in text mode since image mode only has one option */}
+          {mode === 'text' && (
+            <div className="p-4 rounded-lg bg-secondary/30 border border-border/50">
+              <div className="flex items-center gap-2 mb-3">
+                <Zap className="w-4 h-4 text-primary" />
+                <span className="text-sm font-medium text-foreground">Tipo de Operação</span>
+              </div>
+              <Select
+                value={localParams.searchType}
+                onValueChange={(value: SearchType) => updateParam('searchType', value)}
+                disabled={disabled}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Selecione o tipo de operação" />
+                </SelectTrigger>
+                <SelectContent>
+                  {searchTypeOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      <div className="flex items-center gap-2">
+                        <option.icon className="w-4 h-4" />
+                        <span>{option.label}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground mt-2">
+                {searchTypeOptions.find(opt => opt.value === localParams.searchType)?.description}
+              </p>
             </div>
-            <Select
-              value={localParams.searchType}
-              onValueChange={(value: SearchType) => updateParam('searchType', value)}
-              disabled={disabled}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Selecione o tipo de operação" />
-              </SelectTrigger>
-              <SelectContent>
-                {searchTypeOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    <div className="flex items-center gap-2">
-                      <option.icon className="w-4 h-4" />
-                      <span>{option.label}</span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <p className="text-xs text-muted-foreground mt-2">
-              {searchTypeOptions.find(opt => opt.value === localParams.searchType)?.description}
-            </p>
-          </div>
+          )}
 
           {/* Route Information */}
           <div className="flex items-center gap-2 text-xs text-muted-foreground bg-secondary/50 rounded-lg p-3">
@@ -180,7 +182,7 @@ export function SearchSettingsModal({
               </>
             ) : currentSearchType === 'image_search' ? (
               <>
-                <Image className="w-4 h-4" />
+                <ImageIcon className="w-4 h-4" />
                 <span>
                   Rota: <code className="bg-secondary px-1 rounded font-mono">/images/search</code>
                 </span>

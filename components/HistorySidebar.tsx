@@ -11,8 +11,8 @@ import {
   getAnalysisHistory,
   removeAnalysisFromHistory,
 } from '@/lib/history'
-import { FileText, Image, Trash2, History, PanelLeftClose, PanelLeft } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { FileText, Image as ImageIcon, Trash2, History, PanelLeftClose, PanelLeft } from 'lucide-react'
+import { useState, useEffect, useCallback } from 'react'
 import { toast } from 'sonner'
 
 interface HistorySidebarProps {
@@ -26,18 +26,21 @@ export function HistorySidebar({
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [isCollapsed, setIsCollapsed] = useState(true)
 
+  const loadHistory = useCallback(() => {
+    const analyses = getAnalysisHistory()
+    setHistory(analyses)
+  }, [])
+
   useEffect(() => {
-    loadHistory()
+    const timer = setTimeout(() => loadHistory(), 0)
     // Recarrega o histórico quando a janela recebe foco (para atualizar após salvar)
     const handleFocus = () => loadHistory()
     window.addEventListener('focus', handleFocus)
-    return () => window.removeEventListener('focus', handleFocus)
-  }, [])
-
-  const loadHistory = () => {
-    const analyses = getAnalysisHistory()
-    setHistory(analyses)
-  }
+    return () => {
+      clearTimeout(timer)
+      window.removeEventListener('focus', handleFocus)
+    }
+  }, [loadHistory])
 
   const handleDelete = (id: string) => {
     setDeleteId(id)
@@ -112,7 +115,7 @@ export function HistorySidebar({
                   title={getTextPreview(analysis.inputText, 50)}
                 >
                   {analysis.inputType === 'image' ? (
-                    <Image className="w-4 h-4" />
+                    <ImageIcon className="w-4 h-4" />
                   ) : (
                     <FileText className="w-4 h-4" />
                   )}
@@ -151,7 +154,7 @@ export function HistorySidebar({
                     <div className="flex items-start justify-between gap-2 mb-2">
                       <div className="flex items-center gap-2 flex-1 min-w-0">
                         {analysis.inputType === 'image' ? (
-                          <Image className="w-4 h-4 text-primary shrink-0" />
+                          <ImageIcon className="w-4 h-4 text-primary shrink-0" />
                         ) : (
                           <FileText className="w-4 h-4 text-primary shrink-0" />
                         )}
