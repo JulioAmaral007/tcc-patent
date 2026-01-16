@@ -56,7 +56,7 @@ export interface SearchByTextParams {
   use_chunks: boolean
 }
 
-export interface SearchByTextResponse extends PatentsSimilarityResponse {}
+export type SearchByTextResponse = PatentsSimilarityResponse
 
 // ========================================
 // Route: /patents/images/search

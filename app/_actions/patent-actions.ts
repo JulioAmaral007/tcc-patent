@@ -4,7 +4,6 @@ import { externalApiClient } from '@/lib/patent-api-utils'
 import { 
   SearchByTextParams, 
   SearchByTextResponse, 
-  ImagesSearchParams, 
   ImagesSearchResponse,
   EmbedParams,
   EmbedResponse,

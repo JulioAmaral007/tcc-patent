@@ -1,14 +1,7 @@
 import type { 
   SearchByTextResponse, 
   ImagesSearchResponse,
-  EmbedParams,
-  EmbedResponse,
-  SearchByTextParams,
-  ImagesSearchParams,
-  PatentsSimilarityParams,
   PatentsSimilarityResponse,
-  ChunksSimilarityParams,
-  ChunksSimilarityResponse
 } from './types'
 
 import { 
@@ -18,7 +11,6 @@ import {
 } from '@/app/_actions/patent-actions'
 
 // API integration for patent analysis
-const API_URL = '/api/analyze' 
 
 // ========================================
 // Types for Frontend Analysis

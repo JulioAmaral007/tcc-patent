@@ -4,8 +4,6 @@ import type {
   ImagesSearchResponse,
   ChunksSimilarityResponse,
   SimilarPatent,
-  SimilarImage,
-  SimilarPatentByChunks
 } from './types'
 
 export const MOCK_EMBED_RESPONSE: EmbedResponse = {
