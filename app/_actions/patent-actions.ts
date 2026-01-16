@@ -1,7 +1,7 @@
 'use server'
 
 import { externalApiClient } from '@/lib/patent-api-utils'
-import type { 
+import { 
   SearchByTextParams, 
   SearchByTextResponse, 
   ImagesSearchParams, 
@@ -13,13 +13,28 @@ import type {
   ChunksSimilarityParams,
   ChunksSimilarityResponse
 } from '@/lib/types'
+import {
+  MOCK_EMBED_RESPONSE,
+  MOCK_SIMILARITY_RESPONSE,
+  MOCK_IMAGES_RESPONSE,
+  MOCK_CHUNKS_RESPONSE
+} from '@/lib/mock-data'
 
 /**
  * Server Actions para comunicação segura com a API externa de patentes.
  * Estas funções rodam apenas no servidor, mantendo o PATENT_API_TOKEN protegido.
  */
 
+// Toggle para usar mocks em vez da API real
+const USE_MOCKS = true 
+
 export async function generateEmbeddingsAction(params: EmbedParams): Promise<EmbedResponse> {
+  if (USE_MOCKS) {
+    // Simula um delay de rede
+    await new Promise(resolve => setTimeout(resolve, 500))
+    return MOCK_EMBED_RESPONSE
+  }
+
   try {
     const { data } = await externalApiClient.post<EmbedResponse>('/embed/', {
       text: params.text
@@ -32,6 +47,11 @@ export async function generateEmbeddingsAction(params: EmbedParams): Promise<Emb
 }
 
 export async function searchPatentsByTextAction(params: SearchByTextParams): Promise<SearchByTextResponse> {
+  if (USE_MOCKS) {
+    await new Promise(resolve => setTimeout(resolve, 800))
+    return MOCK_SIMILARITY_RESPONSE
+  }
+
   try {
     const { data } = await externalApiClient.post<SearchByTextResponse>('/patents/search/by-text', params)
     return data
@@ -47,6 +67,11 @@ export async function searchSimilarImagesAction(
   similarity_threshold: number, 
   max_results: number
 ): Promise<ImagesSearchResponse> {
+  if (USE_MOCKS) {
+    await new Promise(resolve => setTimeout(resolve, 1000))
+    return MOCK_IMAGES_RESPONSE
+  }
+
   try {
     const formData = new FormData()
     const blob = new Blob([imageData])
@@ -70,6 +95,11 @@ export async function searchSimilarImagesAction(
 }
 
 export async function searchSimilarPatentsAction(params: PatentsSimilarityParams): Promise<PatentsSimilarityResponse> {
+  if (USE_MOCKS) {
+    await new Promise(resolve => setTimeout(resolve, 800))
+    return MOCK_SIMILARITY_RESPONSE
+  }
+
   try {
     const { data } = await externalApiClient.post<PatentsSimilarityResponse>('/patents/similarity', params)
     return data
@@ -80,6 +110,11 @@ export async function searchSimilarPatentsAction(params: PatentsSimilarityParams
 }
 
 export async function searchPatentsByChunksAction(params: ChunksSimilarityParams): Promise<ChunksSimilarityResponse> {
+  if (USE_MOCKS) {
+    await new Promise(resolve => setTimeout(resolve, 800))
+    return MOCK_CHUNKS_RESPONSE
+  }
+
   try {
     const { data } = await externalApiClient.post<ChunksSimilarityResponse>('/patents/chunks/similarity', params)
     return data
