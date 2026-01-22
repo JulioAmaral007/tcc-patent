@@ -1,4 +1,5 @@
 import { ThemeToggle } from '@/components/ThemeToggle'
+import { AuthButton } from '@/components/AuthButton'
 import Image from 'next/image'
 
 export function Header() {
@@ -20,6 +21,7 @@ export function Header() {
             </div>
           </div>
           <div className="flex items-center gap-3">
+            <AuthButton />
             <ThemeToggle />
           </div>
         </div>

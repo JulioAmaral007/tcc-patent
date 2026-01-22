@@ -1,61 +1,127 @@
 'use client'
 
+import { useCallback, useState, useMemo, useEffect } from 'react'
+import { toast } from 'sonner'
+import { useSearchParams } from 'next/navigation'
+import { supabase } from '@/lib/supabase'
+
 import { AnalysisInputView } from '@/components/AnalysisInputView'
 import { AnalysisResultView } from '@/components/AnalysisResultView'
 import { Footer } from '@/components/Footer'
 import { Header } from '@/components/Header'
 import { HistorySidebar } from '@/components/HistorySidebar'
 import { defaultSearchParams, type SearchParams } from '@/components/SearchSettingsModal'
+
 import { 
-  analyzePatent, 
   formatSimilarityResults, 
   formatImageSimilarityResults,
-  performTextSearch,
-  performImageSearch 
+  formatChunksSimilarityResults,
+  performImageSearch
 } from '@/lib/api'
+
+import { 
+  generateEmbeddingsAction,
+  searchSimilarPatentsAction,
+  searchPatentsByChunksAction,
+  searchPatentsByTextAction
+} from '@/app/_actions/patent-actions'
 
 import {
   saveAnalysisToHistory,
   type AnalysisHistory,
 } from '@/lib/history'
-import { processFile, type OCRProgress } from '@/lib/ocr'
-import { useCallback, useState } from 'react'
-import { toast } from 'sonner'
 
+import { processFile, type OCRProgress } from '@/lib/ocr'
+
+type TabType = 'text' | 'image'
 
 export default function Home() {
+  const searchParamsRedirect = useSearchParams()
+
+  useEffect(() => {
+    const errorParam = searchParamsRedirect.get('error')
+    if (errorParam === 'auth_failed') {
+      toast.error('Falha na autenticação', {
+        description: 'Não foi possível completar o login com Google. Verifique o console do servidor.'
+      })
+    }
+
+    // Processa tokens de autenticação do fragmento da URL
+    const processAuthTokens = async () => {
+      console.log('🔍 [DEBUG] URL Hash:', window.location.hash)
+      
+      if (typeof window !== 'undefined' && window.location.hash) {
+        const hashParams = new URLSearchParams(window.location.hash.substring(1))
+        const accessToken = hashParams.get('access_token')
+        const refreshToken = hashParams.get('refresh_token')
+        const expiresIn = hashParams.get('expires_in')
+        
+        console.log('🔍 [DEBUG] Access Token presente?', !!accessToken)
+        console.log('🔍 [DEBUG] Refresh Token presente?', !!refreshToken)
+        
+        if (accessToken && refreshToken) {
+          console.log('✅ [DEBUG] Tokens detectados! Criando sessão...')
+          
+          try {
+            // Define a sessão manualmente usando a API do Supabase
+            const { data, error } = await supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken
+            })
+            
+            if (error) {
+              console.error('❌ [DEBUG] Erro ao definir sessão:', error)
+              toast.error('Erro ao processar login')
+            } else {
+              console.log('✅ [DEBUG] Sessão criada com sucesso!', data.user?.email)
+              toast.success('Login realizado com sucesso!')
+            }
+          } catch (err) {
+            console.error('❌ [DEBUG] Exceção ao definir sessão:', err)
+          }
+          
+          // Limpa o hash da URL
+          window.history.replaceState(null, '', window.location.pathname + window.location.search)
+        }
+      }
+    }
+
+    processAuthTokens()
+  }, [searchParamsRedirect])
+
+  // Input State
+  const [activeTab, setActiveTab] = useState<TabType>('text')
   const [textInput, setTextInput] = useState('')
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [extractedText, setExtractedText] = useState('')
+  
+  // Search Settings State
+  const [searchParams, setSearchParams] = useState<SearchParams>({
+    ...defaultSearchParams,
+    searchType: 'similarity_full',
+  })
+
+  // Results & UI State
   const [result, setResult] = useState<string | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [ocrProgress, setOcrProgress] = useState<OCRProgress | null>(null)
-  const [processingStage, setProcessingStage] = useState<'ocr' | 'api' | 'similarity' | null>(
-    null,
-  )
-  const [activeTab, setActiveTab] = useState('text')
+  const [processingStage, setProcessingStage] = useState<'ocr' | 'api' | 'similarity' | null>(null)
 
-  
-  // Handler para trocar de aba e ajustar searchType automaticamente
+  // Derived State
+  const hasResult = useMemo(() => result !== null, [result])
+  const hasContent = useMemo(() => textInput.trim().length > 0 || selectedFile !== null, [textInput, selectedFile])
+
+  // --- Handlers ---
+
   const handleTabChange = useCallback((newTab: string) => {
-    setActiveTab(newTab)
-    // Ajusta o searchType baseado na aba selecionada
+    const tab = newTab as TabType
+    setActiveTab(tab)
     setSearchParams(prev => ({
       ...prev,
-      searchType: newTab === 'text' ? 'similarity' : 'image_search',
+      searchType: tab === 'text' ? 'similarity_full' : 'image_search',
     }))
   }, [])
-  
-  // Search parameters state
-  const [searchParams, setSearchParams] = useState<SearchParams>({
-    ...defaultSearchParams,
-    searchType: 'similarity', // Default for text
-  })
-
-
-  // Determina se tem resultado (modo chat)
-  const hasResult = result !== null
 
   const handleFileSelect = useCallback((file: File) => {
     setSelectedFile(file)
@@ -74,16 +140,9 @@ export default function Home() {
     setSelectedFile(null)
     setExtractedText('')
     setResult(null)
-
     setError(null)
     setOcrProgress(null)
     setProcessingStage(null)
-  }, [])
-
-  const handleNewAnalysis = useCallback(() => {
-    setResult(null)
-
-
   }, [])
 
   const handleSelectAnalysis = useCallback((analysis: AnalysisHistory) => {
@@ -105,10 +164,7 @@ export default function Home() {
     setOcrProgress({ status: 'Iniciando...', progress: 0 })
 
     try {
-      const text = await processFile(selectedFile, (progress) => {
-        setOcrProgress(progress)
-      })
-
+      const text = await processFile(selectedFile, setOcrProgress)
       setExtractedText(text)
       setTextInput((prev) => prev + (prev ? '\n\n' : '') + text)
 
@@ -116,12 +172,9 @@ export default function Home() {
         description: `${text.length.toLocaleString()} caracteres extraídos do arquivo.`,
       })
     } catch (err) {
-      const errorMessage =
-        err instanceof Error ? err.message : 'Erro ao processar arquivo.'
-      setError(errorMessage)
-      toast.error('Erro no OCR', {
-        description: errorMessage,
-      })
+      const msg = err instanceof Error ? err.message : 'Erro ao processar arquivo.'
+      setError(msg)
+      toast.error('Erro no OCR', { description: msg })
     } finally {
       setIsProcessing(false)
       setProcessingStage(null)
@@ -129,22 +182,107 @@ export default function Home() {
     }
   }, [selectedFile])
 
-  // Unified submit handler based on searchType
-  const handleSubmit = useCallback(async () => {
-    const isTextMode = activeTab === 'text'
-    const currentSearchType = searchParams.searchType
-    
-    // Validation
-    if (isTextMode && !textInput.trim()) {
-      toast.error('Texto vazio', {
-        description: 'Insira o texto para continuar.',
-      })
+  // --- Search Logic ---
+
+  const handleTextSearch = useCallback(async () => {
+    if (!textInput.trim()) {
+      toast.error('Texto vazio', { description: 'Insira o texto para continuar.' })
       return
     }
 
-    if (!isTextMode && !selectedFile) {
-      toast.error('Nenhum arquivo selecionado', {
-        description: 'Selecione uma imagem para continuar.',
+    let formattedResult = ''
+    let totalFound = 0
+
+    const { searchType, similarity_threshold, max_results } = searchParams
+
+    try {
+      if (searchType === 'direct_text') {
+        // Fluxo: Apenas /search/by-text
+        setProcessingStage('similarity')
+        const response = await searchPatentsByTextAction({
+          text: textInput,
+          similarity_threshold,
+          max_results,
+          use_chunks: false // Agora controlado pelo tipo de operação
+        })
+        formattedResult = formatSimilarityResults(response)
+        totalFound = response.total_found
+      } 
+      else if (searchType === 'similarity_full' || searchType === 'chunks_processing') {
+        // Fluxo: /embed -> (/similarity ou /chunks)
+        setProcessingStage('api')
+        const { embeddings } = await generateEmbeddingsAction({ text: textInput })
+        
+        if (!embeddings?.length) {
+          throw new Error('Falha ao gerar embeddings: Nenhum embedding retornado.')
+        }
+
+        const embedding = embeddings[0]
+        setProcessingStage('similarity')
+
+        if (searchType === 'chunks_processing') {
+          const response = await searchPatentsByChunksAction({
+            embedding,
+            similarity_threshold,
+            max_results,
+          })
+          formattedResult = formatChunksSimilarityResults(response)
+          totalFound = response.total_found
+        } else {
+          const response = await searchSimilarPatentsAction({
+            embedding,
+            similarity_threshold,
+            max_results,
+          })
+          formattedResult = formatSimilarityResults(response)
+          totalFound = response.total_found
+        }
+      }
+
+      setResult(formattedResult)
+      await saveAnalysisToHistory(textInput, formattedResult, 'text')
+      
+      toast.success('Busca concluída!', {
+        description: `Encontrados ${totalFound} resultados relevantes.`,
+      })
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Erro na busca.'
+      setError(msg)
+      toast.error('Erro na Operação', { description: msg })
+      throw err // Repassa para o handleSubmit tratar o loading
+    }
+  }, [textInput, searchParams])
+
+  const handleImageSearch = useCallback(async () => {
+    if (!selectedFile) {
+      toast.error('Nenhum arquivo', { description: 'Selecione uma imagem para continuar.' })
+      return
+    }
+
+    setProcessingStage('similarity')
+    const response = await performImageSearch({
+      file: selectedFile,
+      similarity_threshold: searchParams.similarity_threshold,
+      max_results: searchParams.max_results,
+    })
+
+    const formattedResult = formatImageSimilarityResults(response)
+    setResult(formattedResult)
+    await saveAnalysisToHistory(`Busca por imagem: ${selectedFile.name}`, formattedResult, 'image', selectedFile.name)
+
+    toast.success('Busca concluída!', {
+      description: `Encontradas ${response.total_found} imagens similares.`,
+    })
+  }, [selectedFile, searchParams.similarity_threshold, searchParams.max_results])
+
+  const handleSubmit = useCallback(async () => {
+    // Verifica se o usuário está autenticado
+    const { data: { session } } = await supabase.auth.getSession()
+    
+    if (!session) {
+      toast.error('Autenticação necessária', {
+        description: 'Você precisa fazer login com Google para realizar buscas de patentes.',
+        duration: 5000,
       })
       return
     }
@@ -152,74 +290,21 @@ export default function Home() {
     setIsProcessing(true)
     setError(null)
 
-
-
     try {
-      // Determine which operation to run based on mode and searchType
-      if (isTextMode) {
-        if (currentSearchType === 'analyze') {
-          // Analyze with AI
-          setProcessingStage('api')
-          const response = await analyzePatent(textInput)
-
-          if (response.success) {
-            setResult(response.result)
-            saveAnalysisToHistory(textInput, response.result, 'text')
-            toast.success('Análise concluída!', {
-              description: 'Agora você pode tirar dúvidas sobre o resultado.',
-            })
-          } else {
-            throw new Error(response.error || 'Erro desconhecido.')
-          }
-        } else {
-          // Similarity search (embed -> similarity)
-          setProcessingStage('similarity')
-          const response = await performTextSearch({
-            text: textInput,
-            similarity_threshold: searchParams.similarity_threshold,
-            max_results: searchParams.max_results,
-            use_chunks: searchParams.use_chunks,
-          })
-          
-
-          const formattedResult = formatSimilarityResults(response)
-          setResult(formattedResult)
-          
-          toast.success('Busca concluída!', {
-            description: `Encontradas ${response.total_found} patentes similares.`,
-          })
-        }
+      if (activeTab === 'text') {
+        await handleTextSearch()
       } else {
-        // Image mode - always image search
-        setProcessingStage('similarity')
-        const response = await performImageSearch({
-          file: selectedFile!,
-          similarity_threshold: searchParams.similarity_threshold,
-          max_results: searchParams.max_results,
-        })
-        
-
-        const formattedResult = formatImageSimilarityResults(response)
-        setResult(formattedResult)
-        
-        toast.success('Busca concluída!', {
-          description: `Encontradas ${response.total_found} imagens similares.`,
-        })
+        await handleImageSearch()
       }
     } catch (err) {
-      const errorMessage =
-        err instanceof Error ? err.message : 'Erro ao processar.'
-      setError(errorMessage)
-      toast.error('Erro', {
-        description: errorMessage,
-      })
+      const msg = err instanceof Error ? err.message : 'Erro ao processar.'
+      setError(msg)
+      toast.error('Erro', { description: msg })
     } finally {
       setIsProcessing(false)
       setProcessingStage(null)
     }
-  }, [textInput, selectedFile, searchParams, activeTab])
-
-  const hasContent = textInput.trim().length > 0 || selectedFile !== null
+  }, [activeTab, textInput, selectedFile, searchParams, handleTextSearch, handleImageSearch])
 
   return (
     <div className="h-screen flex flex-col overflow-hidden gradient-surface">
@@ -231,7 +316,7 @@ export default function Home() {
         {hasResult && result ? (
           <AnalysisResultView
             result={result}
-            onNewAnalysis={handleNewAnalysis}
+            onNewAnalysis={() => setResult(null)}
           />
         ) : (
           <AnalysisInputView

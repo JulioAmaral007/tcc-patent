@@ -138,11 +138,11 @@ export function ResultViewer({ result, isLoading }: ResultViewerProps) {
           </Button>
         </div>
       </div>
-      <ScrollArea className="flex-1 p-6">
-        <pre className="whitespace-pre-wrap font-mono text-sm text-foreground leading-relaxed">
+      <div className="flex-1 overflow-y-auto p-6 scrollbar-custom">
+        <pre className="whitespace-pre-wrap font-mono text-sm text-white leading-relaxed">
           {result}
         </pre>
-      </ScrollArea>
+      </div>
     </Card>
   )
 }

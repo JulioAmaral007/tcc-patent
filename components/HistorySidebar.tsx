@@ -8,7 +8,7 @@ import {
   type AnalysisHistory,
   formatAnalysisDate,
   getTextPreview,
-  getAnalysisHistory,
+  getFullHistory,
   removeAnalysisFromHistory,
 } from '@/lib/history'
 import { FileText, Image as ImageIcon, Trash2, History, PanelLeftClose, PanelLeft } from 'lucide-react'
@@ -26,8 +26,8 @@ export function HistorySidebar({
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [isCollapsed, setIsCollapsed] = useState(true)
 
-  const loadHistory = useCallback(() => {
-    const analyses = getAnalysisHistory()
+  const loadHistory = useCallback(async () => {
+    const analyses = await getFullHistory()
     setHistory(analyses)
   }, [])
 
@@ -46,10 +46,10 @@ export function HistorySidebar({
     setDeleteId(id)
   }
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (!deleteId) return
 
-    const success = removeAnalysisFromHistory(deleteId)
+    const success = await removeAnalysisFromHistory(deleteId)
     if (success) {
       toast.success('Análise removida', {
         description: 'A análise foi removida do histórico.',

@@ -83,7 +83,10 @@ export function ChatPanel({ analysisResult }: ChatPanelProps) {
       </div>
 
       {/* Messages */}
-      <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
+      <div 
+        className="flex-1 overflow-y-auto p-4 scrollbar-custom" 
+        ref={scrollAreaRef}
+      >
         <div className="space-y-4">
           {messages.length === 0 ? (
             <div className="text-center py-8">
@@ -147,7 +150,7 @@ export function ChatPanel({ analysisResult }: ChatPanelProps) {
 
           <div ref={messagesEndRef} />
         </div>
-      </ScrollArea>
+      </div>
 
       {/* Input */}
       <div className="p-4 border-t border-border">
