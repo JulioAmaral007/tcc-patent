@@ -1,4 +1,6 @@
-// Utilitário para gerenciar histórico de análises no localStorage
+// Utilitário para gerenciar histórico de análises (LocalStorage + Supabase)
+import { supabase } from './supabase'
+import { saveHistoryItem, fetchUserHistory, deleteHistoryItem } from './history-service'
 
 export interface AnalysisHistory {
   id: string
@@ -10,17 +12,18 @@ export interface AnalysisHistory {
 }
 
 const STORAGE_KEY = 'patent-analysis-history'
-const MAX_HISTORY_ITEMS = 50 // Limite de análises no histórico
+const MAX_HISTORY_ITEMS = 50
 
 /**
  * Salva uma nova análise no histórico
+ * Se o usuário estiver logado, salva no Supabase. Caso contrário, apenas no localStorage.
  */
-export function saveAnalysisToHistory(
+export async function saveAnalysisToHistory(
   inputText: string,
   result: string,
   inputType: 'text' | 'image' = 'text',
   fileName?: string,
-): AnalysisHistory {
+): Promise<AnalysisHistory> {
   const analysis: AnalysisHistory = {
     id: `analysis-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
     timestamp: Date.now(),
@@ -30,68 +33,88 @@ export function saveAnalysisToHistory(
     fileName,
   }
 
-  const history = getAnalysisHistory()
-  
-  // Adiciona no início (mais recente primeiro)
-  const newHistory = [analysis, ...history].slice(0, MAX_HISTORY_ITEMS)
+  // Sempre salva no localStorage para persistência offline/convidado
+  const localHistory = getLocalHistory()
+  const newLocalHistory = [analysis, ...localHistory].slice(0, MAX_HISTORY_ITEMS)
   
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(newHistory))
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(newLocalHistory))
   } catch (error) {
-    console.error('Erro ao salvar histórico:', error)
+    console.error('Erro ao salvar histórico local:', error)
+  }
+
+  // Tenta salvar no Supabase se estiver logado
+  try {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) {
+      await saveHistoryItem(analysis)
+    }
+  } catch (error) {
+    console.error('Erro ao sincronizar com Supabase:', error)
   }
 
   return analysis
 }
 
 /**
- * Recupera todo o histórico de análises
+ * Recupera o histórico (LocalStorage ou Supabase)
  */
-export function getAnalysisHistory(): AnalysisHistory[] {
+export async function getFullHistory(): Promise<AnalysisHistory[]> {
+  try {
+    const { data: { user } } = await supabase.auth.getUser()
+    
+    if (user) {
+      const supabaseItems = await fetchUserHistory()
+      return supabaseItems.map(item => ({
+        ...item.content,
+        id: item.id, // Usa o ID do banco de dados
+      })) as AnalysisHistory[]
+    }
+  } catch (error) {
+    console.error('Erro ao buscar histórico do Supabase, usando local:', error)
+  }
+
+  return getLocalHistory()
+}
+
+/**
+ * Funções auxiliares internas
+ */
+function getLocalHistory(): AnalysisHistory[] {
+  if (typeof window === 'undefined') return []
   try {
     const stored = localStorage.getItem(STORAGE_KEY)
     if (!stored) return []
-    
     const history = JSON.parse(stored) as AnalysisHistory[]
-    // Garante que está ordenado por timestamp (mais recente primeiro)
     return history.sort((a, b) => b.timestamp - a.timestamp)
   } catch (error) {
-    console.error('Erro ao recuperar histórico:', error)
     return []
   }
 }
 
-/**
- * Remove uma análise do histórico pelo ID
- */
-export function removeAnalysisFromHistory(id: string): boolean {
+// Mantendo compatibilidade com as funções antigas mas adaptando-as
+export function getAnalysisHistory(): AnalysisHistory[] {
+  return getLocalHistory()
+}
+
+export async function removeAnalysisFromHistory(id: string): Promise<boolean> {
   try {
-    const history = getAnalysisHistory()
+    // Tenta remover do Supabase se for um ID de UUID
+    if (id.length > 20) { 
+      await deleteHistoryItem(id)
+    }
+    
+    // Sempre tenta remover do local
+    const history = getLocalHistory()
     const filtered = history.filter((item) => item.id !== id)
     localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered))
     return true
   } catch (error) {
-    console.error('Erro ao remover análise do histórico:', error)
+    console.error('Erro ao remover do histórico:', error)
     return false
   }
 }
 
-/**
- * Limpa todo o histórico
- */
-export function clearAnalysisHistory(): boolean {
-  try {
-    localStorage.removeItem(STORAGE_KEY)
-    return true
-  } catch (error) {
-    console.error('Erro ao limpar histórico:', error)
-    return false
-  }
-}
-
-/**
- * Formata a data para exibição
- */
 export function formatAnalysisDate(timestamp: number): string {
   const date = new Date(timestamp)
   const now = new Date()
@@ -114,11 +137,7 @@ export function formatAnalysisDate(timestamp: number): string {
   })
 }
 
-/**
- * Gera um preview do texto (primeiras palavras)
- */
 export function getTextPreview(text: string, maxLength: number = 60): string {
   if (text.length <= maxLength) return text
   return text.substring(0, maxLength).trim() + '...'
 }
-
