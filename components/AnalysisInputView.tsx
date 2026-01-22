@@ -167,11 +167,7 @@ export function AnalysisInputView({
               </>
             ) : activeTab === 'text' ? (
               <>
-                {searchParams.searchType === 'analyze' ? (
-                  <><Sparkles className="w-5 h-5" /> Analisar com IA</>
-                ) : (
-                  <><Search className="w-5 h-5" /> Buscar Similares</>
-                )}
+                <Search className="w-5 h-5" /> Buscar Similares
               </>
             ) : (
               <><Search className="w-5 h-5" /> Buscar por Imagem</>

@@ -24,20 +24,18 @@ import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
 import { Settings2, RotateCcw, Layers, Image as ImageIcon, FileText, Zap, Check, Sparkles, Search } from 'lucide-react'
 
-export type SearchType = 'similarity' | 'image_search' | 'analyze'
+export type SearchType = 'similarity_full' | 'direct_text' | 'chunks_processing' | 'image_search'
 
 export interface SearchParams {
   similarity_threshold: number
   max_results: number
-  use_chunks: boolean
   searchType: SearchType
 }
 
 export const defaultSearchParams: SearchParams = {
   similarity_threshold: API_DEFAULTS.similarity_threshold,
   max_results: API_DEFAULTS.max_results,
-  use_chunks: API_DEFAULTS.use_chunks,
-  searchType: 'similarity',
+  searchType: 'similarity_full',
 }
 
 interface SearchSettingsModalProps {
@@ -67,7 +65,7 @@ export function SearchSettingsModal({
   const handleReset = useCallback(() => {
     setLocalParams({
       ...defaultSearchParams,
-      searchType: mode === 'text' ? 'similarity' : 'image_search',
+      searchType: mode === 'text' ? 'similarity_full' : 'image_search',
     })
   }, [mode])
 
@@ -89,15 +87,15 @@ export function SearchSettingsModal({
   const hasChanges =
     localParams.similarity_threshold !== defaultSearchParams.similarity_threshold ||
     localParams.max_results !== defaultSearchParams.max_results ||
-    localParams.use_chunks !== defaultSearchParams.use_chunks ||
-    localParams.searchType !== (mode === 'text' ? 'similarity' : 'image_search')
+    localParams.searchType !== (mode === 'text' ? 'similarity_full' : 'image_search')
 
   // Get available search types based on mode
   const getSearchTypeOptions = () => {
     if (mode === 'text') {
       return [
-        { value: 'similarity', label: 'Busca por Similaridade', icon: Search, description: 'Encontra patentes similares ao texto' },
-        { value: 'analyze', label: 'Análise com IA', icon: Sparkles, description: 'Analisa o texto com inteligência artificial' },
+        { value: 'similarity_full', label: 'Busca por Similaridade (Completa)', icon: Search, description: 'Encontra patentes similares ao texto gerando embeddings' },
+        { value: 'direct_text', label: 'Busca Direta por Texto', icon: FileText, description: 'Encontra patentes via busca textual direta' },
+        { value: 'chunks_processing', label: 'Processamento por Chunks', icon: Layers, description: 'Compara o texto com trechos específicos das patentes' },
       ]
     } else {
       return [
@@ -108,7 +106,7 @@ export function SearchSettingsModal({
 
   const searchTypeOptions = getSearchTypeOptions()
   const currentSearchType = localParams.searchType
-  const showSimilaritySettings = currentSearchType === 'similarity' || currentSearchType === 'image_search'
+  const showSimilaritySettings = true // All remaining types use similarity settings
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -173,25 +171,32 @@ export function SearchSettingsModal({
 
           {/* Route Information */}
           <div className="flex items-center gap-2 text-xs text-muted-foreground bg-secondary/50 rounded-lg p-3">
-            {currentSearchType === 'similarity' ? (
+            {currentSearchType === 'similarity_full' ? (
               <>
                 <FileText className="w-4 h-4" />
                 <span>
-                  Rotas: <code className="bg-secondary px-1 rounded font-mono">/embed</code> → <code className="bg-secondary px-1 rounded font-mono">/search/by-text</code>
+                  Rotas: <code className="bg-secondary px-1 rounded font-mono">/embed</code> → <code className="bg-secondary px-1 rounded font-mono">/similarity</code>
                 </span>
               </>
-            ) : currentSearchType === 'image_search' ? (
+            ) : currentSearchType === 'direct_text' ? (
               <>
-                <ImageIcon className="w-4 h-4" />
+                <FileText className="w-4 h-4" />
                 <span>
-                  Rota: <code className="bg-secondary px-1 rounded font-mono">/images/search</code>
+                  Rota: <code className="bg-secondary px-1 rounded font-mono">/search/by-text</code>
+                </span>
+              </>
+            ) : currentSearchType === 'chunks_processing' ? (
+              <>
+                <Layers className="w-4 h-4" />
+                <span>
+                  Rotas: <code className="bg-secondary px-1 rounded font-mono">/embed</code> → <code className="bg-secondary px-1 rounded font-mono">/chunks</code>
                 </span>
               </>
             ) : (
               <>
-                <Sparkles className="w-4 h-4" />
+                <ImageIcon className="w-4 h-4" />
                 <span>
-                  Rota: <code className="bg-secondary px-1 rounded font-mono">/analyze</code>
+                  Rota: <code className="bg-secondary px-1 rounded font-mono">/images/search</code>
                 </span>
               </>
             )}
@@ -228,34 +233,6 @@ export function SearchSettingsModal({
                 />
               </div>
 
-              {/* Use Chunks Toggle - Only for text mode */}
-              {mode === 'text' && currentSearchType === 'similarity' && (
-                <div className="p-4 rounded-lg bg-secondary/30 border border-border/50">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1 space-y-1">
-                      <div className="flex items-center gap-2">
-                        <Layers className="w-4 h-4 text-purple-500" />
-                        <Label
-                          htmlFor="use-chunks-modal"
-                          className="text-sm font-medium cursor-pointer"
-                        >
-                          Buscar por Chunks
-                        </Label>
-                      </div>
-                      <p className="text-xs text-muted-foreground leading-relaxed">
-                        Quando ativado, compara o texto com cada chunk das patentes ao invés do embedding completo.
-                      </p>
-                    </div>
-                    <Switch
-                      id="use-chunks-modal"
-                      checked={localParams.use_chunks}
-                      onCheckedChange={(checked) => updateParam('use_chunks', checked)}
-                      disabled={disabled}
-                      className="ml-4"
-                    />
-                  </div>
-                </div>
-              )}
             </>
           )}
         </div>

@@ -145,7 +145,6 @@ export interface SliderConfig {
 export const API_DEFAULTS = {
   similarity_threshold: 0.5,
   max_results: 10,
-  use_chunks: false,
 } as const
 
 // Slider configurations for each parameter
