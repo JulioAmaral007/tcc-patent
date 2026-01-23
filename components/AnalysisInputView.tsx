@@ -56,26 +56,22 @@ export function AnalysisInputView({
   onDismissError,
 }: AnalysisInputViewProps) {
   return (
-    <div className="flex-1 overflow-y-auto flex items-start justify-center py-6 px-4 scrollbar-hide">
-      <div className="w-full max-w-2xl space-y-6 animate-in fade-in duration-700 slide-in-from-bottom-4">
+    <div className="flex-1 overflow-y-auto flex items-start justify-center py-12 px-4">
+      <div className="w-full max-w-2xl space-y-6 animate-fade-in">
         
         {/* Card Principal de Entrada */}
-        <Card className="p-6 bg-card/80 backdrop-blur-md shadow-soft border-border/30 rounded-xl relative overflow-hidden">
-          {/* Subtle background glow */}
-          <div className="absolute -top-12 -right-12 w-32 h-32 bg-primary/5 rounded-full blur-2xl pointer-events-none" />
-          <div className="absolute -bottom-12 -left-12 w-32 h-32 bg-blue-500/5 rounded-full blur-2xl pointer-events-none" />
-          
-          <div className="relative flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+        <div className="glass-effect rounded-2xl p-6 card-glow relative overflow-hidden">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-2">
               <FileText className="w-5 h-5 text-primary" />
-              Entrada de Dados
-            </h2>
+              <h2 className="text-lg font-semibold text-foreground">Entrada de Dados</h2>
+            </div>
             {hasContent && (
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={onClearAll}
-                className="text-muted-foreground hover:text-destructive"
+                className="text-muted-foreground hover:text-destructive rounded-xl h-8 px-3"
               >
                 <Trash2 className="w-4 h-4 mr-1" />
                 Limpar
@@ -88,18 +84,24 @@ export function AnalysisInputView({
             onValueChange={onTabChange} 
             className="w-full space-y-6"
           >
-            <TabsList className="grid w-full grid-cols-2 p-1 h-11 bg-secondary/30 rounded-lg">
-              <TabsTrigger value="text" className="gap-2 rounded-md">
+            <TabsList className="grid w-full grid-cols-2 p-1 bg-muted/50 rounded-xl h-11">
+              <TabsTrigger 
+                value="text" 
+                className="flex items-center justify-center w-full h-full gap-2 rounded-lg data-[state=active]:gradient-primary data-[state=active]:text-primary-foreground data-[state=active]:glow-primary data-[state=active]:shadow-md transition-all duration-200"
+              >
                 <FileText className="w-4 h-4" />
                 Texto
               </TabsTrigger>
-              <TabsTrigger value="upload" className="gap-2 rounded-md">
+              <TabsTrigger 
+                value="upload" 
+                className="flex items-center justify-center w-full h-full gap-2 rounded-lg data-[state=active]:gradient-primary data-[state=active]:text-primary-foreground data-[state=active]:glow-primary data-[state=active]:shadow-md transition-all duration-200"
+              >
                 <Upload className="w-4 h-4" />
                 Upload
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="text" className="mt-0">
+            <TabsContent value="text" className="mt-0 outline-none">
               <TextInputArea
                 value={textInput}
                 onChange={onTextInputChange}
@@ -108,7 +110,7 @@ export function AnalysisInputView({
               />
             </TabsContent>
 
-            <TabsContent value="upload" className="mt-0 space-y-4">
+            <TabsContent value="upload" className="mt-0 space-y-4 outline-none">
               <UploadArea
                 onFileSelect={onFileSelect}
                 selectedFile={selectedFile}
@@ -122,7 +124,7 @@ export function AnalysisInputView({
                 <Button
                   onClick={onProcessOCR}
                   disabled={isProcessing}
-                  className="w-full gap-2 gradient-primary"
+                  className="w-full gap-2 gradient-primary rounded-xl h-10 shadow-glow"
                 >
                   <Sparkles className="w-4 h-4" />
                   Extrair Texto (OCR)
@@ -130,47 +132,45 @@ export function AnalysisInputView({
               )}
 
               {extractedText && (
-                <Card className="p-4 bg-success/5 border-success/20">
-                  <p className="text-sm text-success font-medium mb-1">
-                    ✓ Texto extraído com sucesso
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {extractedText.length.toLocaleString()} caracteres
-                    adicionados ao campo de texto.
-                  </p>
-                </Card>
+                <div className="p-4 bg-primary/5 border border-primary/20 rounded-xl flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+                    <Sparkles className="w-4 h-4 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-primary font-medium">✓ Texto extraído com sucesso</p>
+                    <p className="text-xs text-muted-foreground">
+                      {extractedText.length.toLocaleString()} caracteres adicionados.
+                    </p>
+                  </div>
+                </div>
               )}
             </TabsContent>
           </Tabs>
-        </Card>
+        </div>
 
         {/* Botão de Submit Único */}
-        <div className="flex items-stretch gap-3">
-          <div className="flex-none">
-            <SearchSettingsModal
-              params={searchParams}
-              onParamsChange={onSearchParamsChange}
-              mode={activeTab === 'text' ? 'text' : 'image'}
-              disabled={isProcessing}
-            />
-          </div>
+        <div className="flex items-center gap-3">
+          <SearchSettingsModal
+            params={searchParams}
+            onParamsChange={onSearchParamsChange}
+            mode={activeTab === 'text' ? 'text' : 'image'}
+            disabled={isProcessing}
+          />
           <Button
             onClick={onSubmit}
             disabled={isProcessing || (activeTab === 'text' ? !textInput.trim() : !selectedFile)}
-            size="lg"
-            className="flex-1 gap-3 bg-gradient-to-r from-purple-500 via-violet-500 to-blue-500 hover:from-purple-600 hover:via-violet-600 hover:to-blue-600 text-white rounded-lg h-14 text-base font-semibold shadow-soft hover:shadow-glow transition-all duration-300 hover:scale-[1.01] active:scale-[0.98]"
+            className="flex-1 h-14 rounded-xl gradient-primary text-primary-foreground text-lg font-semibold hover:opacity-90 transition-all glow-primary disabled:opacity-50 disabled:cursor-not-allowed group"
           >
             {isProcessing ? (
-              <>
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                Processando...
-              </>
-            ) : activeTab === 'text' ? (
-              <>
-                <Search className="w-5 h-5" /> Buscar Similares
-              </>
+              <div className="flex items-center gap-3">
+                <div className="w-5 h-5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+                <span>Processando...</span>
+              </div>
             ) : (
-              <><Search className="w-5 h-5" /> Buscar por Imagem</>
+              <div className="flex items-center gap-2">
+                <Search className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                <span>{activeTab === 'text' ? 'Buscar Similares' : 'Buscar por Imagem'}</span>
+              </div>
             )}
           </Button>
         </div>
@@ -188,7 +188,6 @@ export function AnalysisInputView({
             onRetry={onSubmit}
           />
         )}
-
       </div>
     </div>
   )

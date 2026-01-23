@@ -1,6 +1,4 @@
-'use client'
-
-import { ArrowRight } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ChatPanel } from '@/components/ChatPanel'
 import { ResultViewer } from '@/components/ResultViewer'
@@ -15,34 +13,27 @@ export function AnalysisResultView({
   onNewAnalysis,
 }: AnalysisResultViewProps) {
   return (
-    <div className="flex-1 overflow-hidden container mx-auto px-4 py-6">
+    <div className="flex-1 overflow-hidden p-6 animate-fade-in">
       <div className="h-full flex flex-col">
-        {/* Botão para nova análise */}
-        <div className="mb-4 flex items-center justify-between">
+        {/* Header da visualização de resultados */}
+        <div className="flex items-center justify-between mb-6">
           <Button
-            variant="outline"
             onClick={onNewAnalysis}
-            className="gap-2"
+            variant="outline"
+            className="border-primary text-primary hover:bg-primary/10 rounded-xl"
           >
-            <ArrowRight className="w-4 h-4 rotate-180" />
+            <ArrowLeft className="w-4 h-4 mr-2" />
             Nova Análise
           </Button>
-          <div className="text-sm text-muted-foreground">
+          <p className="text-sm text-muted-foreground hidden sm:block">
             Tire suas dúvidas sobre o resultado
-          </div>
+          </p>
         </div>
-
-        {/* Main Content Area: Chat + Result */}
-        <div className="flex-1 flex flex-col lg:flex-row gap-6 min-h-0">
-          {/* Chat Panel - Esquerda */}
-          <div className="flex-[4] min-h-0">
-            <ChatPanel
-              analysisResult={result}
-            />
-          </div>
-          
-          {/* Result Panel - Direita */}
-          <div className="flex-[6] min-h-0 flex flex-col">
+        
+        {/* Grid de Conteúdo */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-[calc(100vh-14rem)]">
+          <ChatPanel analysisResult={result} />
+          <div className="h-full flex flex-col min-h-0">
             <ResultViewer 
               result={result} 
               isLoading={false} 

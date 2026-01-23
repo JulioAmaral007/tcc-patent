@@ -7,6 +7,8 @@ import { Textarea } from '@/components/ui/textarea'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Send, Bot, User } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
+import { toast } from 'sonner'
+import { processarChatComIAAction, buscarMensagensAction } from '@/app/_actions/chat-actions'
 
 interface ChatMessage {
   id: string
@@ -23,8 +25,30 @@ export function ChatPanel({ analysisResult }: ChatPanelProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  
+  // Geramos um ID estável baseado no resultado da análise ou um ID persistente
+  // Geramos um ID estável baseado no resultado da análise ou um ID persistente
+  const [conversationId] = useState(() => {
+    return crypto.randomUUID() 
+  })
+
   const scrollAreaRef = useRef<HTMLDivElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+
+  // Carrega o histórico ao montar o componente
+  useEffect(() => {
+    const carregarHistorico = async () => {
+      try {
+        const historico = await buscarMensagensAction(conversationId)
+        if (historico.length > 0) {
+          setMessages(historico)
+        }
+      } catch (err) {
+        console.error("Error loading history:", err)
+      }
+    }
+    carregarHistorico()
+  }, [conversationId])
 
   useEffect(() => {
     // Scroll to bottom when new messages arrive
@@ -42,22 +66,32 @@ export function ChatPanel({ analysisResult }: ChatPanelProps) {
     }
 
     setMessages((prev) => [...prev, userMessage])
+    const currentInput = input.trim()
     setInput('')
     setIsLoading(true)
 
-    // Simula uma resposta da IA baseada no contexto da análise
-    // Em produção, isso seria uma chamada à API
-    setTimeout(() => {
+    try {
+      // Chamada real para o Gemini via Server Action
+      const responseText = await processarChatComIAAction(
+        conversationId, 
+        currentInput, 
+        analysisResult
+      );
+
       const assistantMessage: ChatMessage = {
         id: `msg-${Date.now()}-assistant`,
         role: 'assistant',
-        content: generateResponse(userMessage.content, analysisResult),
+        content: responseText ?? '',
         timestamp: Date.now(),
       }
 
       setMessages((prev) => [...prev, assistantMessage])
+    } catch (error) {
+      console.error('Erro no chat:', error)
+      toast.error('Erro ao obter resposta da IA.')
+    } finally {
       setIsLoading(false)
-    }, 1500)
+    }
   }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -68,14 +102,12 @@ export function ChatPanel({ analysisResult }: ChatPanelProps) {
   }
 
   return (
-    <Card className="flex-1 flex flex-col bg-card overflow-hidden h-full">
+    <div className="h-full flex flex-col glass-effect rounded-2xl overflow-hidden shadow-soft">
       {/* Header */}
       <div className="p-4 border-b border-border">
         <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-success animate-pulse" />
-          <span className="text-sm font-medium text-foreground">
-            Chat sobre a Análise
-          </span>
+          <div className="w-2 h-2 rounded-full bg-primary animate-pulse-glow" />
+          <h3 className="font-semibold text-foreground">Chat sobre a Análise</h3>
         </div>
         <p className="text-xs text-muted-foreground mt-1">
           Faça perguntas sobre o resultado da análise
@@ -89,14 +121,12 @@ export function ChatPanel({ analysisResult }: ChatPanelProps) {
       >
         <div className="space-y-4">
           {messages.length === 0 ? (
-            <div className="text-center py-8">
-              <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center mx-auto mb-4">
+            <div className="h-full flex flex-col items-center justify-center text-center py-12">
+              <div className="w-16 h-16 rounded-2xl bg-muted/50 flex items-center justify-center mb-4 transition-transform hover:scale-110 duration-300">
                 <Bot className="w-8 h-8 text-muted-foreground" />
               </div>
-              <p className="text-sm text-muted-foreground mb-2">
-                Inicie uma conversa
-              </p>
-              <p className="text-xs text-muted-foreground">
+              <h4 className="font-medium text-foreground mb-1">Inicie uma conversa</h4>
+              <p className="text-sm text-muted-foreground max-w-[200px]">
                 Faça perguntas sobre a análise para obter mais informações
               </p>
             </div>
@@ -104,45 +134,32 @@ export function ChatPanel({ analysisResult }: ChatPanelProps) {
             messages.map((message) => (
               <div
                 key={message.id}
-                className={`flex gap-3 ${
+                className={`flex ${
                   message.role === 'user' ? 'justify-end' : 'justify-start'
                 }`}
               >
-                {message.role === 'assistant' && (
-                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                    <Bot className="w-4 h-4 text-primary" />
-                  </div>
-                )}
                 <div
-                  className={`max-w-[80%] rounded-lg p-3 ${
+                  className={`max-w-[85%] px-4 py-3 rounded-2xl transition-all hover:scale-[1.01] ${
                     message.role === 'user'
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-accent text-accent-foreground'
+                      ? 'bg-primary text-primary-foreground shadow-glow'
+                      : 'bg-muted/80 text-foreground border border-border/50 backdrop-blur-sm'
                   }`}
                 >
-                  <p className="text-sm whitespace-pre-wrap">
+                  <p className="text-sm whitespace-pre-wrap leading-relaxed">
                     {message.content}
                   </p>
                 </div>
-                {message.role === 'user' && (
-                  <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center shrink-0">
-                    <User className="w-4 h-4 text-foreground" />
-                  </div>
-                )}
               </div>
             ))
           )}
 
           {isLoading && (
-            <div className="flex gap-3 justify-start">
-              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                <Bot className="w-4 h-4 text-primary" />
-              </div>
-              <div className="bg-accent rounded-lg p-3 max-w-[80%]">
-                <div className="flex gap-2">
-                  <Skeleton className="h-4 w-4 rounded-full" />
-                  <Skeleton className="h-4 w-4 rounded-full" />
-                  <Skeleton className="h-4 w-4 rounded-full" />
+            <div className="flex justify-start">
+              <div className="bg-muted/50 rounded-2xl px-4 py-3 border border-border/50">
+                <div className="flex gap-1.5 h-4 items-center">
+                  <div className="w-1.5 h-1.5 rounded-full bg-primary/60 animate-bounce [animation-delay:-0.3s]" />
+                  <div className="w-1.5 h-1.5 rounded-full bg-primary/60 animate-bounce [animation-delay:-0.15s]" />
+                  <div className="w-1.5 h-1.5 rounded-full bg-primary/60 animate-bounce" />
                 </div>
               </div>
             </div>
@@ -153,30 +170,30 @@ export function ChatPanel({ analysisResult }: ChatPanelProps) {
       </div>
 
       {/* Input */}
-      <div className="p-4 border-t border-border">
+      <div className="p-4 border-t border-border bg-background/50">
         <div className="flex gap-2">
           <Textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Digite sua pergunta sobre a análise..."
-            className="min-h-[60px] max-h-[120px] resize-none"
+            placeholder="Digite sua pergunta..."
+            className="flex-1 min-h-[44px] max-h-[120px] resize-none bg-input/50 border-border focus:border-primary focus:ring-1 focus:ring-primary/20 rounded-xl px-4 py-2.5 text-sm"
             disabled={isLoading}
           />
           <Button
             onClick={handleSend}
             disabled={!input.trim() || isLoading}
-            className="gap-2 gradient-primary shrink-0"
-            size="lg"
+            className="h-[44px] w-[44px] p-0 rounded-xl gradient-primary text-primary-foreground shrink-0 shadow-glow hover:opacity-90 transition-all"
+            size="icon"
           >
             <Send className="w-4 h-4" />
           </Button>
         </div>
-        <p className="text-xs text-muted-foreground mt-2">
+        <p className="text-[10px] text-muted-foreground mt-2 px-1">
           Pressione Enter para enviar, Shift+Enter para nova linha
         </p>
       </div>
-    </Card>
+    </div>
   )
 }
 

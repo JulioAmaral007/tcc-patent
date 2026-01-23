@@ -1,13 +1,9 @@
-'use client'
-
 export function Footer() {
   return (
-    <footer className="border-t border-border bg-card/50 shrink-0">
-      <div className="container mx-auto px-4 py-4">
-        <p className="text-xs text-center text-muted-foreground">
-          Patent Analyzer • Processamento de patentes com OCR integrado
-        </p>
-      </div>
+    <footer className="fixed bottom-0 left-16 right-0 py-3 text-center border-t border-border bg-background/80 backdrop-blur-xl z-30">
+      <p className="text-[10px] sm:text-xs text-muted-foreground tracking-wide">
+        <span className="font-semibold text-foreground">Patent Analyzer</span> • 2026 • Processamento inteligente com OCR & IA
+      </p>
     </footer>
   )
 }
