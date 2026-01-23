@@ -59,15 +59,14 @@ export function formatSimilarityResults(response: SearchByTextResponse): string 
 `
 
   response.similar_patents.forEach((patent, index) => {
-    result += `
-${index + 1}. ${patent.title || 'Sem título'}
-   ├─ Nº Publicação: ${patent.publication_number || 'N/A'}
-   ├─ Nº Depósito: ${patent.application_number || 'N/A'}
-   ├─ Data: ${patent.publication_date || 'N/A'}
-   ├─ Similaridade: ${(patent.similarity_score * 100).toFixed(1)}%
-   ├─ Organização: ${patent.orgname || 'N/A'}
-   ├─ Códigos IPC: ${patent.ipc_codes?.join(', ') || 'N/A'}
-   └─ Resumo: ${patent.abstract || 'N/A'}
+    result += `${index + 1}. ${patent.title || 'Sem título'}
+├── Nº Publicação: ${patent.publication_number || 'N/A'}
+├── Nº Depósito: ${patent.application_number || 'N/A'}
+├── Data: ${patent.publication_date || 'N/A'}
+├── Similaridade: ${(patent.similarity_score * 100).toFixed(1)}%
+├── Organização: ${patent.orgname || 'N/A'}
+├── Códigos IPC: ${patent.ipc_codes?.join(', ') || 'N/A'}
+└── Resumo: ${patent.abstract || 'N/A'}
 
 `
   })
@@ -98,15 +97,15 @@ export function formatChunksSimilarityResults(response: ChunksSimilarityResponse
 `
 
   response.similar_patents.forEach((patent, index) => {
-    result += `
-${index + 1}. ${patent.title || 'Sem título'}
-   ├─ Nº Publicação: ${patent.publication_number || 'N/A'}
-   ├─ Similaridade: ${(patent.similarity_score * 100).toFixed(1)}%
-   ├─ Organização: ${patent.orgname || 'N/A'}
-   └─ Trechos Relacionados:
+    result += `${index + 1}. ${patent.title || 'Sem título'}
+├── Nº Publicação: ${patent.publication_number || 'N/A'}
+├── Similaridade: ${(patent.similarity_score * 100).toFixed(1)}%
+├── Organização: ${patent.orgname || 'N/A'}
+└── Trechos Relacionados:
 `
     patent.chunks?.forEach((chunk: string, cIdx: number) => {
-      result += `      ${cIdx + 1}. "${chunk.substring(0, 150)}${chunk.length > 150 ? '...' : ''}"\n`
+      const char = (patent.chunks && cIdx === patent.chunks.length - 1) ? '   └──' : '   ├──'
+      result += `${char} ${cIdx + 1}. "${chunk.substring(0, 150)}${chunk.length > 150 ? '...' : ''}"\n`
     })
     result += '\n'
   })
@@ -137,15 +136,14 @@ export function formatImageSimilarityResults(response: ImagesSearchResponse): st
 `
 
   response.similar_images.forEach((image, index) => {
-    result += `
-${index + 1}. ${image.title || 'Sem título'}
-   ├─ ID da Imagem: ${image.image_id}
-   ├─ Nº Publicação: ${image.publication_number || 'N/A'}
-   ├─ Arquivo: ${image.image_filename || 'N/A'}
-   ├─ Similaridade: ${(image.similarity_score * 100).toFixed(1)}%
-   ├─ Data: ${image.publication_date || 'N/A'}
-   ├─ Organização: ${image.orgname || 'N/A'}
-   └─ Resumo: ${image.abstract || 'N/A'}
+    result += `${index + 1}. ${image.title || 'Sem título'}
+├── ID da Imagem: ${image.image_id}
+├── Nº Publicação: ${image.publication_number || 'N/A'}
+├── Arquivo: ${image.image_filename || 'N/A'}
+├── Similaridade: ${(image.similarity_score * 100).toFixed(1)}%
+├── Data: ${image.publication_date || 'N/A'}
+├── Organização: ${image.orgname || 'N/A'}
+└── Resumo: ${image.abstract || 'N/A'}
 
 `
   })
