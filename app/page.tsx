@@ -4,6 +4,7 @@ import { useCallback, useState, useMemo, useEffect } from 'react'
 import { toast } from 'sonner'
 import { useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { cn } from '@/lib/utils'
 
 import { AnalysisInputView } from '@/components/AnalysisInputView'
 import { AnalysisResultView } from '@/components/AnalysisResultView'
@@ -35,8 +36,25 @@ import { processFile, type OCRProgress } from '@/lib/ocr'
 
 type TabType = 'text' | 'image'
 
+import { Sidebar } from '@/components/Sidebar'
+
 export default function Home() {
   const searchParamsRedirect = useSearchParams()
+
+  // Sidebar State
+  const [sidebarTab, setSidebarTab] = useState('main')
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false)
+
+  const handleSidebarTabChange = (tab: string) => {
+    if (tab === 'history') {
+      const nextState = !isHistoryOpen
+      setIsHistoryOpen(nextState)
+      setSidebarTab(nextState ? 'history' : 'main')
+    } else {
+      setSidebarTab(tab)
+      setIsHistoryOpen(false)
+    }
+  }
 
   useEffect(() => {
     const errorParam = searchParamsRedirect.get('error')
@@ -307,11 +325,40 @@ export default function Home() {
   }, [activeTab, textInput, selectedFile, searchParams, handleTextSearch, handleImageSearch])
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden gradient-surface">
+    <div className="min-h-screen bg-background text-foreground">
+      <Sidebar activeTab={sidebarTab} onTabChange={handleSidebarTabChange} />
       <Header />
 
-      <main className="flex-1 overflow-hidden flex">
-        <HistorySidebar onSelectAnalysis={handleSelectAnalysis} />
+      <main className="pl-16 pt-16 min-h-screen flex relative">
+        {/* Overlay para fechar o histórico ao clicar fora */}
+        <div 
+          className={cn(
+            "absolute inset-0 bg-background/20 backdrop-blur-sm z-10 transition-all duration-300",
+            isHistoryOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+          )} 
+          onClick={() => {
+            setIsHistoryOpen(false)
+            setSidebarTab('main')
+          }}
+        />
+
+        {/* Histórico como Painel Lateral (Sempre no DOM para animação suave) */}
+        <div className={cn(
+          "absolute inset-y-0 left-16 w-80 z-20 transition-all duration-300 ease-in-out border-r border-border shadow-2xl overflow-hidden",
+          isHistoryOpen ? "translate-x-0 opacity-100 visibility-visible" : "-translate-x-full opacity-0 visibility-hidden"
+        )}>
+          <HistorySidebar 
+            onClose={() => {
+              setIsHistoryOpen(false)
+              setSidebarTab('main')
+            }}
+            onSelectAnalysis={(analysis) => {
+              handleSelectAnalysis(analysis)
+              setIsHistoryOpen(false)
+              setSidebarTab('main')
+            }} 
+          />
+        </div>
 
         {hasResult && result ? (
           <AnalysisResultView

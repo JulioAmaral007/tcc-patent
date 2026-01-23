@@ -11,20 +11,22 @@ import {
   getFullHistory,
   removeAnalysisFromHistory,
 } from '@/lib/history'
-import { FileText, Image as ImageIcon, Trash2, History, PanelLeftClose, PanelLeft } from 'lucide-react'
+import { FileText, Image as ImageIcon, Trash2, History, Search, X } from 'lucide-react'
 import { useState, useEffect, useCallback } from 'react'
 import { toast } from 'sonner'
 
 interface HistorySidebarProps {
   onSelectAnalysis: (analysis: AnalysisHistory) => void
+  onClose?: () => void
 }
 
 export function HistorySidebar({
   onSelectAnalysis,
+  onClose,
 }: HistorySidebarProps) {
   const [history, setHistory] = useState<AnalysisHistory[]>([])
   const [deleteId, setDeleteId] = useState<string | null>(null)
-  const [isCollapsed, setIsCollapsed] = useState(true)
+  const [searchTerm, setSearchTerm] = useState('')
 
   const loadHistory = useCallback(async () => {
     const analyses = await getFullHistory()
@@ -32,15 +34,16 @@ export function HistorySidebar({
   }, [])
 
   useEffect(() => {
-    const timer = setTimeout(() => loadHistory(), 0)
-    // Recarrega o histórico quando a janela recebe foco (para atualizar após salvar)
+    loadHistory()
     const handleFocus = () => loadHistory()
     window.addEventListener('focus', handleFocus)
-    return () => {
-      clearTimeout(timer)
-      window.removeEventListener('focus', handleFocus)
-    }
+    return () => window.removeEventListener('focus', handleFocus)
   }, [loadHistory])
+
+  const filteredHistory = history.filter(item => 
+    item.inputText.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (item.fileName && item.fileName.toLowerCase().includes(searchTerm.toLowerCase()))
+  )
 
   const handleDelete = (id: string) => {
     setDeleteId(id)
@@ -48,150 +51,125 @@ export function HistorySidebar({
 
   const confirmDelete = async () => {
     if (!deleteId) return
-
     const success = await removeAnalysisFromHistory(deleteId)
     if (success) {
-      toast.success('Análise removida', {
-        description: 'A análise foi removida do histórico.',
-      })
+      toast.success('Análise removida')
       loadHistory()
     } else {
-      toast.error('Erro ao remover', {
-        description: 'Não foi possível remover a análise.',
-      })
+      toast.error('Erro ao remover')
     }
     setDeleteId(null)
   }
 
   return (
     <>
-      {/* Sidebar Colapsável */}
-      <div 
-        className={`hidden lg:flex bg-card/50 backdrop-blur-sm border-r border-border/30 flex-col shadow-soft shrink-0 h-full transition-all duration-300 ease-in-out ${
-          isCollapsed ? 'w-16' : 'w-80'
-        }`}
-      >
+      <div className="flex bg-card/95 backdrop-blur-xl border-r border-border flex-col shadow-2xl w-80 h-full pointer-events-auto">
         {/* Header */}
-        <div className="p-4 border-b border-border">
-          <div className="flex items-center justify-between gap-2">
-            <div className={`flex items-center gap-2 overflow-hidden transition-opacity duration-200 ${isCollapsed ? 'opacity-0 w-0' : 'opacity-100'}`}>
-              <History className="w-5 h-5 text-primary shrink-0" />
-              <h2 className="text-lg font-semibold text-foreground whitespace-nowrap">
+        <div className="p-6 border-b border-border space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center shadow-glow">
+                <History className="w-4 h-4 text-primary-foreground" />
+              </div>
+              <h2 className="text-lg font-bold text-foreground tracking-tight">
                 Histórico
               </h2>
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setIsCollapsed(!isCollapsed)}
-              className="shrink-0 text-muted-foreground hover:text-foreground"
-              title={isCollapsed ? 'Expandir histórico' : 'Retrair histórico'}
-            >
-              {isCollapsed ? (
-                <PanelLeft className="w-5 h-5" />
-              ) : (
-                <PanelLeftClose className="w-5 h-5" />
-              )}
-            </Button>
+            {onClose && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onClose}
+                className="h-8 w-8 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            )}
+          </div>
+          
+          {/* Search Input */}
+          <div className="relative group">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+            <input 
+              type="text"
+              placeholder="Pesquisar análises..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full bg-muted/50 border border-border/50 rounded-xl py-2 pl-9 pr-4 text-sm focus:outline-none focus:ring-1 focus:ring-primary/30 focus:border-primary/30 transition-all"
+            />
           </div>
         </div>
 
         {/* Content */}
-        {isCollapsed ? (
-          // Vista Colapsada - Apenas ícones
-          <div className="flex-1 flex flex-col items-center py-4 gap-2 overflow-y-auto">
-            {history.length === 0 ? (
-              <div className="p-2">
-                <History className="w-5 h-5 text-muted-foreground" />
+        <ScrollArea className="flex-1 scrollbar-custom">
+          {filteredHistory.length === 0 ? (
+            <div className="p-8 text-center space-y-4">
+              <div className="w-16 h-16 rounded-2xl bg-muted/30 flex items-center justify-center mx-auto">
+                <History className="w-8 h-8 text-muted-foreground/50" />
               </div>
-            ) : (
-              history.slice(0, 10).map((analysis) => (
-                <Button
+              <div>
+                <p className="text-sm font-medium text-foreground">
+                  Nenhum registro encontrado
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {searchTerm ? 'Tente outros termos de busca' : 'Suas análises aparecerão aqui'}
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="p-4 space-y-3">
+              {filteredHistory.map((analysis) => (
+                <div
                   key={analysis.id}
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => onSelectAnalysis(analysis)}
-                  className="shrink-0 text-muted-foreground hover:text-foreground hover:bg-accent/50"
-                  title={getTextPreview(analysis.inputText, 50)}
+                  className="group relative"
                 >
-                  {analysis.inputType === 'image' ? (
-                    <ImageIcon className="w-4 h-4" />
-                  ) : (
-                    <FileText className="w-4 h-4" />
-                  )}
-                </Button>
-              ))
-            )}
-            {history.length > 10 && (
-              <span className="text-xs text-muted-foreground">+{history.length - 10}</span>
-            )}
-          </div>
-        ) : (
-          // Vista Expandida - Conteúdo Completo
-          <ScrollArea className="flex-1">
-            {history.length === 0 ? (
-              <div className="p-6 text-center">
-                <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center mx-auto mb-4">
-                  <History className="w-8 h-8 text-muted-foreground" />
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Nenhuma análise no histórico
-                </p>
-                <p className="text-xs text-muted-foreground mt-2">
-                  As análises realizadas aparecerão aqui
-                </p>
-              </div>
-            ) : (
-              <div className="p-4 space-y-3">
-                {history.map((analysis) => (
-                  <Card
-                    key={analysis.id}
-                    className="p-4 bg-card hover:bg-accent/50 transition-colors cursor-pointer group"
-                    onClick={() => {
-                      onSelectAnalysis(analysis)
-                    }}
+                  <div 
+                    onClick={() => onSelectAnalysis(analysis)}
+                    className="p-4 rounded-2xl bg-muted/20 border border-border/40 hover:bg-muted/40 hover:border-primary/30 transition-all cursor-pointer relative overflow-hidden active:scale-[0.98]"
                   >
                     <div className="flex items-start justify-between gap-2 mb-2">
                       <div className="flex items-center gap-2 flex-1 min-w-0">
-                        {analysis.inputType === 'image' ? (
-                          <ImageIcon className="w-4 h-4 text-primary shrink-0" />
-                        ) : (
-                          <FileText className="w-4 h-4 text-primary shrink-0" />
-                        )}
-                        <span className="text-xs text-muted-foreground truncate">
+                        <div className="w-6 h-6 rounded-md bg-background/50 flex items-center justify-center border border-border/50">
+                          {analysis.inputType === 'image' ? (
+                            <ImageIcon className="w-3 h-3 text-primary" />
+                          ) : (
+                            <FileText className="w-3 h-3 text-primary" />
+                          )}
+                        </div>
+                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
                           {formatAnalysisDate(analysis.timestamp)}
                         </span>
                       </div>
+                      
                       <Button
                         variant="ghost"
-                        size="icon-sm"
+                        size="icon"
                         onClick={(e) => {
                           e.stopPropagation()
                           handleDelete(analysis.id)
                         }}
-                        className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                        className="h-6 w-6 rounded-md opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
+                        <Trash2 className="w-3 h-3" />
                       </Button>
                     </div>
-                    <p className="text-sm text-foreground overflow-hidden text-ellipsis" style={{
-                      display: '-webkit-box',
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: 'vertical',
-                    }}>
-                      {getTextPreview(analysis.inputText, 80)}
+
+                    <p className="text-sm text-foreground line-clamp-2 leading-relaxed font-medium">
+                      {getTextPreview(analysis.inputText, 100)}
                     </p>
+
                     {analysis.fileName && (
-                      <p className="text-xs text-muted-foreground mt-1 truncate">
-                        {analysis.fileName}
-                      </p>
+                      <div className="mt-2 flex items-center gap-1.5 text-[10px] text-primary/70 font-mono">
+                        <div className="w-1 h-1 rounded-full bg-primary/40" />
+                        <span className="truncate">{analysis.fileName}</span>
+                      </div>
                     )}
-                  </Card>
-                ))}
-              </div>
-            )}
-          </ScrollArea>
-        )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </ScrollArea>
       </div>
 
       {/* Delete Confirmation Dialog */}
