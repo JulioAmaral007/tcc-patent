@@ -16,7 +16,7 @@ export function ErrorBox({ message, onDismiss, onRetry }: ErrorBoxProps) {
           <AlertCircle className="w-4 h-4 text-destructive" />
         </div>
         <div className="flex-1 min-w-0">
-          <h4 className="text-sm font-medium text-destructive mb-1">Erro</h4>
+          <h4 className="text-sm font-medium text-destructive mb-1">Error</h4>
           <p className="text-sm text-destructive/80">{message}</p>
         </div>
         <div className="flex items-center gap-1 shrink-0">

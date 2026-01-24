@@ -17,25 +17,25 @@ const jetbrainsMono = JetBrains_Mono({
 })
 
 export const metadata: Metadata = {
-  title: 'Analisador de Patentes',
+  title: 'Patent Analyzer',
   description:
-    'Sistema inteligente para análise de documentos de patentes. Extraia texto de imagens e PDFs com OCR e obtenha análises detalhadas. Exporte resultados em PDF.',
+    'Intelligent system for patent document analysis. Extract text from images and PDFs with OCR and get detailed analysis. Export results as PDF.',
   keywords: [
-    'análise de patentes',
+    'patent analysis',
     'OCR',
-    'extração de texto',
-    'propriedade intelectual',
-    'documentos de patente',
-    'processamento de imagens',
+    'text extraction',
+    'intellectual property',
+    'patent documents',
+    'image processing',
   ],
   authors: [{ name: 'Júlio Cézar' }],
   creator: 'Júlio Cézar',
   openGraph: {
-    title: 'Analisador de Patentes',
+    title: 'Patent Analyzer',
     description:
-      'Sistema inteligente para análise de documentos de patentes com OCR e exportação em PDF.',
+      'Intelligent system for patent document analysis with OCR and PDF export.',
     type: 'website',
-    locale: 'pt_BR',
+    locale: 'en_US',
   },
   robots: {
     index: true,

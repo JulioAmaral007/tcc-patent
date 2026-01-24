@@ -22,8 +22,8 @@ export function AlertDialog({
   onOpenChange,
   title,
   description,
-  confirmText = 'Confirmar',
-  cancelText = 'Cancelar',
+  confirmText = 'Confirm',
+  cancelText = 'Cancel',
   onConfirm,
   variant = 'default',
 }: AlertDialogProps) {

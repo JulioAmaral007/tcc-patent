@@ -31,14 +31,14 @@ export function AnalysisResultView({
         </div>
         
         {/* Grid de Conteúdo */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-[calc(100vh-14rem)]">
-          <ChatPanel analysisResult={result} />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-auto lg:h-[calc(100vh-14rem)] min-h-[600px] lg:min-h-0">
           <div className="h-full flex flex-col min-h-0">
             <ResultViewer 
               result={result} 
               isLoading={false} 
             />
           </div>
+          <ChatPanel analysisResult={result} />
         </div>
       </div>
     </div>

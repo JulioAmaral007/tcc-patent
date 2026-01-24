@@ -17,23 +17,23 @@ export function ProcessingProgress({
   const getStageInfo = () => {
     if (stage === 'ocr') {
       return {
-        title: 'Extraindo texto (OCR)',
-        description: progress?.status || 'Processando...',
+        title: 'Extracting text (OCR)',
+        description: progress?.status || 'Processing...',
         progress: Math.round((progress?.progress || 0) * 100),
         icon: Scan,
       }
     }
     if (stage === 'similarity') {
       return {
-        title: 'Buscando patentes similares',
-        description: 'Comparando embeddings...',
+        title: 'Searching similar patents',
+        description: 'Comparing embeddings...',
         progress: null,
         icon: Search,
       }
     }
     return {
-      title: 'Analisando patente',
-      description: 'Enviando para API de análise...',
+      title: 'Analyzing patent',
+      description: 'Sending to analysis API...',
       progress: null,
       icon: Loader2,
     }

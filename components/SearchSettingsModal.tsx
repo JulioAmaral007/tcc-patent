@@ -93,13 +93,13 @@ export function SearchSettingsModal({
   const getSearchTypeOptions = () => {
     if (mode === 'text') {
       return [
-        { value: 'similarity_full', label: 'Busca por Similaridade (Completa)', icon: Search, description: 'Encontra patentes similares ao texto gerando embeddings' },
-        { value: 'direct_text', label: 'Busca Direta por Texto', icon: FileText, description: 'Encontra patentes via busca textual direta' },
-        { value: 'chunks_processing', label: 'Processamento por Chunks', icon: Layers, description: 'Compara o texto com trechos específicos das patentes' },
+        { value: 'similarity_full', label: 'Similarity Search (Full)', icon: Search, description: 'Finds similar patents to text generating embeddings' },
+        { value: 'direct_text', label: 'Direct Text Search', icon: FileText, description: 'Finds patents via direct text search' },
+        { value: 'chunks_processing', label: 'Chunk Processing', icon: Layers, description: 'Compares text with specific patent excerpts' },
       ]
     } else {
       return [
-        { value: 'image_search', label: 'Busca por Imagem', icon: ImageIcon, description: 'Encontra patentes com imagens similares' },
+        { value: 'image_search', label: 'Image Search', icon: ImageIcon, description: 'Finds patents with similar images' },
       ]
     }
   }
@@ -116,7 +116,7 @@ export function SearchSettingsModal({
           size="icon"
           disabled={disabled}
           className="shrink-0 relative h-14 w-14 rounded-xl border-border/40 bg-card/50 backdrop-blur-sm hover:bg-secondary/50 shadow-soft"
-          title="Configurações Avançadas"
+          title="Advanced Settings"
         >
           <Settings2 className="w-5 h-5 text-muted-foreground" />
           {/* Badge indicator when settings are modified */}
@@ -129,10 +129,10 @@ export function SearchSettingsModal({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Settings2 className="w-5 h-5 text-primary" />
-            Configurações Avançadas
+            Advanced Settings
           </DialogTitle>
           <DialogDescription>
-            Configure o tipo de operação e os parâmetros de busca.
+            Configure the operation type and search parameters.
           </DialogDescription>
         </DialogHeader>
 
@@ -142,7 +142,7 @@ export function SearchSettingsModal({
             <div className="p-4 rounded-lg bg-secondary/30 border border-border/50">
               <div className="flex items-center gap-2 mb-3">
                 <Zap className="w-4 h-4 text-primary" />
-                <span className="text-sm font-medium text-foreground">Tipo de Operação</span>
+                <span className="text-sm font-medium text-foreground">Operation Type</span>
               </div>
               <Select
                 value={localParams.searchType}
@@ -150,7 +150,7 @@ export function SearchSettingsModal({
                 disabled={disabled}
               >
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Selecione o tipo de operação" />
+                  <SelectValue placeholder="Select the operation type" />
                 </SelectTrigger>
                 <SelectContent>
                   {searchTypeOptions.map((option) => (
@@ -175,28 +175,28 @@ export function SearchSettingsModal({
               <>
                 <FileText className="w-4 h-4" />
                 <span>
-                  Rotas: <code className="bg-secondary px-1 rounded font-mono">/embed</code> → <code className="bg-secondary px-1 rounded font-mono">/similarity</code>
+                  Routes: <code className="bg-secondary px-1 rounded font-mono">/embed</code> → <code className="bg-secondary px-1 rounded font-mono">/similarity</code>
                 </span>
               </>
             ) : currentSearchType === 'direct_text' ? (
               <>
                 <FileText className="w-4 h-4" />
                 <span>
-                  Rota: <code className="bg-secondary px-1 rounded font-mono">/search/by-text</code>
+                  Route: <code className="bg-secondary px-1 rounded font-mono">/search/by-text</code>
                 </span>
               </>
             ) : currentSearchType === 'chunks_processing' ? (
               <>
                 <Layers className="w-4 h-4" />
                 <span>
-                  Rotas: <code className="bg-secondary px-1 rounded font-mono">/embed</code> → <code className="bg-secondary px-1 rounded font-mono">/chunks</code>
+                  Routes: <code className="bg-secondary px-1 rounded font-mono">/embed</code> → <code className="bg-secondary px-1 rounded font-mono">/chunks</code>
                 </span>
               </>
             ) : (
               <>
                 <ImageIcon className="w-4 h-4" />
                 <span>
-                  Rota: <code className="bg-secondary px-1 rounded font-mono">/images/search</code>
+                  Route: <code className="bg-secondary px-1 rounded font-mono">/images/search</code>
                 </span>
               </>
             )}
@@ -209,7 +209,7 @@ export function SearchSettingsModal({
               <div className="p-4 rounded-lg bg-secondary/30 border border-border/50">
                 <div className="flex items-center gap-2 mb-4">
                   <Zap className="w-4 h-4 text-amber-500" />
-                  <span className="text-sm font-medium text-foreground">Parâmetros de Similaridade</span>
+                  <span className="text-sm font-medium text-foreground">Similarity Parameters</span>
                 </div>
                 <ParameterSlider
                   config={SLIDER_CONFIGS.similarity_threshold}
@@ -223,7 +223,7 @@ export function SearchSettingsModal({
               <div className="p-4 rounded-lg bg-secondary/30 border border-border/50">
                 <div className="flex items-center gap-2 mb-4">
                   <Layers className="w-4 h-4 text-blue-500" />
-                  <span className="text-sm font-medium text-foreground">Limite de Resultados</span>
+                  <span className="text-sm font-medium text-foreground">Results Limit</span>
                 </div>
                 <ParameterSlider
                   config={SLIDER_CONFIGS.max_results}
@@ -247,7 +247,7 @@ export function SearchSettingsModal({
               className="gap-2"
             >
               <RotateCcw className="w-4 h-4" />
-              Resetar
+              Reset
             </Button>
           )}
           <div className="flex-1" />
@@ -255,7 +255,7 @@ export function SearchSettingsModal({
             variant="outline"
             onClick={() => setOpen(false)}
           >
-            Cancelar
+            Cancel
           </Button>
           <Button
             onClick={handleApply}
@@ -263,7 +263,7 @@ export function SearchSettingsModal({
             className="gap-2"
           >
             <Check className="w-4 h-4" />
-            Aplicar
+            Apply
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -32,12 +32,12 @@ export function UploadArea({
       const file = acceptedFiles[0]
 
       if (!isValidFileType(file)) {
-        setError('Tipo de arquivo não suportado. Use PNG, JPG ou PDF.')
+        setError('Unsupported file type. Use PNG, JPG or PDF.')
         return
       }
 
       if (file.size > 10 * 1024 * 1024) {
-        setError('Arquivo muito grande. Máximo permitido: 10MB.')
+        setError('File too large. Maximum allowed: 10MB.')
         return
       }
 
@@ -66,7 +66,7 @@ export function UploadArea({
   return (
     <div className="space-y-3">
       <label className="text-sm font-medium text-foreground">
-        Upload de Arquivo
+        File Upload
       </label>
 
       {!selectedFile ? (
@@ -97,11 +97,11 @@ export function UploadArea({
             </div>
             <p className="text-sm font-semibold text-foreground mb-1">
               {isDragActive
-                ? 'Solte o arquivo para analisar'
-                : 'Arraste e solte o arquivo da patente'}
+                ? 'Drop the file to analyze'
+                : 'Drag and drop the patent file'}
             </p>
             <p className="text-xs text-muted-foreground mb-4 max-w-[200px]">
-              Suporta documentos técnicos (Imagem/PDF) de até 10MB
+              Supports technical documents (Image/PDF) up to 10MB
             </p>
             <div className="flex gap-3">
               <span className="px-4 py-2 text-xs rounded-full bg-secondary/60 text-secondary-foreground font-semibold border border-border/30">

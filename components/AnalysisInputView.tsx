@@ -59,12 +59,12 @@ export function AnalysisInputView({
     <div className="flex-1 overflow-y-auto flex items-start justify-center py-12 px-4">
       <div className="w-full max-w-2xl space-y-6 animate-fade-in">
         
-        {/* Card Principal de Entrada */}
-        <div className="glass-effect rounded-2xl p-6 card-glow relative overflow-hidden">
+        {/* Main Input Card */}
+        <div className="glass-effect rounded-2xl p-4 sm:p-6 card-glow relative overflow-hidden">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-2">
               <FileText className="w-5 h-5 text-primary" />
-              <h2 className="text-lg font-semibold text-foreground">Entrada de Dados</h2>
+              <h2 className="text-lg font-semibold text-foreground">Data Input</h2>
             </div>
             {hasContent && (
               <Button
@@ -74,7 +74,7 @@ export function AnalysisInputView({
                 className="text-muted-foreground hover:text-destructive rounded-xl h-8 px-3"
               >
                 <Trash2 className="w-4 h-4 mr-1" />
-                Limpar
+                Clear
               </Button>
             )}
           </div>
@@ -90,7 +90,7 @@ export function AnalysisInputView({
                 className="flex items-center justify-center w-full h-full gap-2 rounded-lg data-[state=active]:gradient-primary data-[state=active]:text-primary-foreground data-[state=active]:glow-primary data-[state=active]:shadow-md transition-all duration-200"
               >
                 <FileText className="w-4 h-4" />
-                Texto
+                Text
               </TabsTrigger>
               <TabsTrigger 
                 value="upload" 
@@ -106,7 +106,7 @@ export function AnalysisInputView({
                 value={textInput}
                 onChange={onTextInputChange}
                 disabled={isProcessing}
-                placeholder="Cole ou digite o texto da patente aqui..."
+                placeholder="Paste or type the patent text here..."
               />
             </TabsContent>
 
@@ -127,7 +127,7 @@ export function AnalysisInputView({
                   className="w-full gap-2 gradient-primary rounded-xl h-10 shadow-glow"
                 >
                   <Sparkles className="w-4 h-4" />
-                  Extrair Texto (OCR)
+                  Extract Text (OCR)
                 </Button>
               )}
 
@@ -137,9 +137,9 @@ export function AnalysisInputView({
                     <Sparkles className="w-4 h-4 text-primary" />
                   </div>
                   <div>
-                    <p className="text-sm text-primary font-medium">✓ Texto extraído com sucesso</p>
+                    <p className="text-sm text-primary font-medium">✓ Text extracted successfully</p>
                     <p className="text-xs text-muted-foreground">
-                      {extractedText.length.toLocaleString()} caracteres adicionados.
+                      {extractedText.length.toLocaleString()} characters added.
                     </p>
                   </div>
                 </div>
@@ -148,7 +148,7 @@ export function AnalysisInputView({
           </Tabs>
         </div>
 
-        {/* Botão de Submit Único */}
+        {/* Single Submit Button */}
         <div className="flex items-center gap-3">
           <SearchSettingsModal
             params={searchParams}
@@ -164,12 +164,12 @@ export function AnalysisInputView({
             {isProcessing ? (
               <div className="flex items-center gap-3">
                 <div className="w-5 h-5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
-                <span>Processando...</span>
+                <span>Processing...</span>
               </div>
             ) : (
               <div className="flex items-center gap-2">
                 <Search className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                <span>{activeTab === 'text' ? 'Buscar Similares' : 'Buscar por Imagem'}</span>
+                <span>{activeTab === 'text' ? 'Search Similar' : 'Search by Image'}</span>
               </div>
             )}
           </Button>

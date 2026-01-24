@@ -61,7 +61,7 @@ export function AuthButton() {
     try {
       await signInWithGoogle()
     } catch (error) {
-      toast.error('Erro ao entrar com Google')
+      toast.error('Error signing in with Google')
     }
   }
 
@@ -69,9 +69,9 @@ export function AuthButton() {
     try {
       await signOut()
       setIsOpen(false)
-      toast.success('Sessão encerrada')
+      toast.success('Session ended')
     } catch (error) {
-      toast.error('Erro ao sair')
+      toast.error('Error signing out')
     }
   }
 
@@ -122,12 +122,12 @@ export function AuthButton() {
               <button 
                 className="w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded-md hover:bg-accent hover:text-accent-foreground transition-colors"
                 onClick={() => {
-                  toast.info('Configurações em breve')
+                  toast.info('Settings coming soon')
                   setIsOpen(false)
                 }}
               >
                 <Settings className="w-4 h-4" />
-                <span>Configurações</span>
+                <span>Settings</span>
               </button>
               
               <button 
@@ -135,7 +135,7 @@ export function AuthButton() {
                 className="w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded-md text-destructive hover:bg-destructive/10 transition-colors mt-1"
               >
                 <LogOut className="w-4 h-4" />
-                <span>Sair da conta</span>
+                <span>Sign out</span>
               </button>
             </div>
           </div>
@@ -152,7 +152,8 @@ export function AuthButton() {
       className="gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md transition-all hover:scale-105 active:scale-95 px-4 rounded-full"
     >
       <LogIn className="w-4 h-4" />
-      <span>Entrar com Google</span>
+      <span className="hidden sm:inline">Sign in with Google</span>
+      <span className="sm:hidden">Sign in</span>
     </Button>
   )
 }

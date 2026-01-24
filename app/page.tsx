@@ -2,7 +2,7 @@
 
 import { useCallback, useState, useMemo, useEffect, Suspense } from 'react'
 import { toast } from 'sonner'
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { cn } from '@/lib/utils'
 
@@ -24,7 +24,8 @@ import {
   generateEmbeddingsAction,
   searchSimilarPatentsAction,
   searchPatentsByChunksAction,
-  searchPatentsByTextAction
+  searchPatentsByTextAction,
+  searchPatentsByChunksWithTextAction
 } from '@/app/_actions/patent-actions'
 
 import {
@@ -44,8 +45,8 @@ function SearchParamsHandler() {
   useEffect(() => {
     const errorParam = searchParams.get('error')
     if (errorParam === 'auth_failed') {
-      toast.error('Falha na autenticação', {
-        description: 'Não foi possível completar o login com Google. Verifique o console do servidor.'
+      toast.error('Authentication failed', {
+        description: 'Could not complete sign in with Google. Check the server console.'
       })
     }
 
@@ -74,10 +75,10 @@ function SearchParamsHandler() {
             
             if (error) {
               console.error('❌ [DEBUG] Erro ao definir sessão:', error)
-              toast.error('Erro ao processar login')
+              toast.error('Error processing login')
             } else {
               console.log('✅ [DEBUG] Sessão criada com sucesso!', data.user?.email)
-              toast.success('Login realizado com sucesso!')
+              toast.success('Login successful!')
             }
           } catch (err) {
             console.error('❌ [DEBUG] Exceção ao definir sessão:', err)
@@ -99,12 +100,15 @@ export default function Home() {
   // Sidebar State
   const [sidebarTab, setSidebarTab] = useState('main')
   const [isHistoryOpen, setIsHistoryOpen] = useState(false)
+  const router = useRouter()
 
   const handleSidebarTabChange = (tab: string) => {
     if (tab === 'history') {
       const nextState = !isHistoryOpen
       setIsHistoryOpen(nextState)
       setSidebarTab(nextState ? 'history' : 'main')
+    } else if (tab === 'patents') {
+      router.push('/patents')
     } else {
       setSidebarTab(tab)
       setIsHistoryOpen(false)
@@ -171,8 +175,8 @@ export default function Home() {
     setResult(analysis.result)
     setSelectedFile(null)
     setExtractedText('')
-    toast.success('Análise carregada', {
-      description: 'A análise foi restaurada do histórico.',
+    toast.success('Analysis loaded', {
+      description: 'The analysis was restored from history.',
     })
   }, [])
 
@@ -182,20 +186,20 @@ export default function Home() {
     setIsProcessing(true)
     setError(null)
     setProcessingStage('ocr')
-    setOcrProgress({ status: 'Iniciando...', progress: 0 })
+    setOcrProgress({ status: 'Starting...', progress: 0 })
 
     try {
       const text = await processFile(selectedFile, setOcrProgress)
       setExtractedText(text)
       setTextInput((prev) => prev + (prev ? '\n\n' : '') + text)
 
-      toast.success('Texto extraído!', {
-        description: `${text.length.toLocaleString()} caracteres extraídos do arquivo.`,
+      toast.success('Text extracted!', {
+        description: `${text.length.toLocaleString()} characters extracted from the file.`,
       })
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Erro ao processar arquivo.'
+      const msg = err instanceof Error ? err.message : 'Error processing file.'
       setError(msg)
-      toast.error('Erro no OCR', { description: msg })
+      toast.error('OCR Error', { description: msg })
     } finally {
       setIsProcessing(false)
       setProcessingStage(null)
@@ -207,7 +211,7 @@ export default function Home() {
 
   const handleTextSearch = useCallback(async () => {
     if (!textInput.trim()) {
-      toast.error('Texto vazio', { description: 'Insira o texto para continuar.' })
+      toast.error('Empty text', { description: 'Insert text to continue.' })
       return
     }
 
@@ -230,53 +234,52 @@ export default function Home() {
         totalFound = response.total_found
       } 
       else if (searchType === 'similarity_full' || searchType === 'chunks_processing') {
-        // Fluxo: /embed -> (/similarity ou /chunks)
-        setProcessingStage('api')
-        const { embeddings } = await generateEmbeddingsAction({ text: textInput })
+        // Fluxo: /embed -> (/similarity ou /chunks) encapsulado nas Server Actions
+        setProcessingStage('api') // Simplificado, pois a action faz tudo
         
-        if (!embeddings?.length) {
-          throw new Error('Falha ao gerar embeddings: Nenhum embedding retornado.')
-        }
-
-        const embedding = embeddings[0]
-        setProcessingStage('similarity')
-
         if (searchType === 'chunks_processing') {
-          const response = await searchPatentsByChunksAction({
-            embedding,
-            similarity_threshold,
-            max_results,
-          })
-          formattedResult = formatChunksSimilarityResults(response)
-          totalFound = response.total_found
+           const response = await searchPatentsByChunksWithTextAction({
+             text: textInput,
+             max_results,
+             similarity_threshold
+           })
+           formattedResult = formatChunksSimilarityResults(response)
+           totalFound = response.total_found
         } else {
-          const response = await searchSimilarPatentsAction({
-            embedding,
-            similarity_threshold,
-            max_results,
-          })
-          formattedResult = formatSimilarityResults(response)
-          totalFound = response.total_found
+           // Fluxo antigo para similarity_full
+           const { embeddings } = await generateEmbeddingsAction({ text: textInput })
+           
+           if (!embeddings?.length) {
+             throw new Error('Failed to generate embeddings: No embedding returned.')
+           }
+
+           const response = await searchSimilarPatentsAction({
+             embedding: embeddings[0],
+             similarity_threshold,
+             max_results,
+           })
+           formattedResult = formatSimilarityResults(response)
+           totalFound = response.total_found
         }
       }
 
       setResult(formattedResult)
       await saveAnalysisToHistory(textInput, formattedResult, 'text')
       
-      toast.success('Busca concluída!', {
-        description: `Encontrados ${totalFound} resultados relevantes.`,
+      toast.success('Search complete!', {
+        description: `Found ${totalFound} relevant results.`,
       })
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Erro na busca.'
+      const msg = err instanceof Error ? err.message : 'Search error.'
       setError(msg)
-      toast.error('Erro na Operação', { description: msg })
+      toast.error('Operation Error', { description: msg })
       throw err // Repassa para o handleSubmit tratar o loading
     }
   }, [textInput, searchParams])
 
   const handleImageSearch = useCallback(async () => {
     if (!selectedFile) {
-      toast.error('Nenhum arquivo', { description: 'Selecione uma imagem para continuar.' })
+      toast.error('No file', { description: 'Select an image to continue.' })
       return
     }
 
@@ -289,10 +292,10 @@ export default function Home() {
 
     const formattedResult = formatImageSimilarityResults(response)
     setResult(formattedResult)
-    await saveAnalysisToHistory(`Busca por imagem: ${selectedFile.name}`, formattedResult, 'image', selectedFile.name)
+    await saveAnalysisToHistory(`Image search: ${selectedFile.name}`, formattedResult, 'image', selectedFile.name)
 
-    toast.success('Busca concluída!', {
-      description: `Encontradas ${response.total_found} imagens similares.`,
+    toast.success('Search complete!', {
+      description: `Found ${response.total_found} similar images.`,
     })
   }, [selectedFile, searchParams.similarity_threshold, searchParams.max_results])
 
@@ -301,8 +304,8 @@ export default function Home() {
     const { data: { session } } = await supabase.auth.getSession()
     
     if (!session) {
-      toast.error('Autenticação necessária', {
-        description: 'Você precisa fazer login com Google para realizar buscas de patentes.',
+      toast.error('Authentication required', {
+        description: 'You need to sign in with Google to perform patent searches.',
         duration: 5000,
       })
       return
@@ -318,9 +321,9 @@ export default function Home() {
         await handleImageSearch()
       }
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Erro ao processar.'
+      const msg = err instanceof Error ? err.message : 'Error processing.'
       setError(msg)
-      toast.error('Erro', { description: msg })
+      toast.error('Error', { description: msg })
     } finally {
       setIsProcessing(false)
       setProcessingStage(null)
@@ -335,7 +338,7 @@ export default function Home() {
       <Sidebar activeTab={sidebarTab} onTabChange={handleSidebarTabChange} />
       <Header />
 
-      <main className="pl-16 pt-16 min-h-screen flex relative">
+      <main className="pt-16 pb-16 md:pb-0 md:pl-16 min-h-screen flex relative">
         {/* Overlay para fechar o histórico ao clicar fora */}
         <div 
           className={cn(
@@ -350,7 +353,7 @@ export default function Home() {
 
         {/* Histórico como Painel Lateral (Sempre no DOM para animação suave) */}
         <div className={cn(
-          "absolute inset-y-0 left-16 w-80 z-20 transition-all duration-300 ease-in-out border-r border-border shadow-2xl overflow-hidden",
+          "absolute inset-y-0 left-0 md:left-16 w-full sm:w-80 z-20 transition-all duration-300 ease-in-out border-r border-border shadow-2xl overflow-hidden bg-background",
           isHistoryOpen ? "translate-x-0 opacity-100 visibility-visible" : "-translate-x-full opacity-0 visibility-hidden"
         )}>
           <HistorySidebar 
