@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useState, useMemo, useEffect } from 'react'
+import { useCallback, useState, useMemo, useEffect, Suspense } from 'react'
 import { toast } from 'sonner'
 import { useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
@@ -38,26 +38,11 @@ type TabType = 'text' | 'image'
 
 import { Sidebar } from '@/components/Sidebar'
 
-export default function Home() {
-  const searchParamsRedirect = useSearchParams()
-
-  // Sidebar State
-  const [sidebarTab, setSidebarTab] = useState('main')
-  const [isHistoryOpen, setIsHistoryOpen] = useState(false)
-
-  const handleSidebarTabChange = (tab: string) => {
-    if (tab === 'history') {
-      const nextState = !isHistoryOpen
-      setIsHistoryOpen(nextState)
-      setSidebarTab(nextState ? 'history' : 'main')
-    } else {
-      setSidebarTab(tab)
-      setIsHistoryOpen(false)
-    }
-  }
+function SearchParamsHandler() {
+  const searchParams = useSearchParams()
 
   useEffect(() => {
-    const errorParam = searchParamsRedirect.get('error')
+    const errorParam = searchParams.get('error')
     if (errorParam === 'auth_failed') {
       toast.error('Falha na autenticação', {
         description: 'Não foi possível completar o login com Google. Verifique o console do servidor.'
@@ -105,9 +90,27 @@ export default function Home() {
     }
 
     processAuthTokens()
-  }, [searchParamsRedirect])
+  }, [searchParams])
 
-  // Input State
+  return null
+}
+
+export default function Home() {
+  // Sidebar State
+  const [sidebarTab, setSidebarTab] = useState('main')
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false)
+
+  const handleSidebarTabChange = (tab: string) => {
+    if (tab === 'history') {
+      const nextState = !isHistoryOpen
+      setIsHistoryOpen(nextState)
+      setSidebarTab(nextState ? 'history' : 'main')
+    } else {
+      setSidebarTab(tab)
+      setIsHistoryOpen(false)
+    }
+  }
+
   const [activeTab, setActiveTab] = useState<TabType>('text')
   const [textInput, setTextInput] = useState('')
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
@@ -326,6 +329,9 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
+      <Suspense fallback={null}>
+        <SearchParamsHandler />
+      </Suspense>
       <Sidebar activeTab={sidebarTab} onTabChange={handleSidebarTabChange} />
       <Header />
 
