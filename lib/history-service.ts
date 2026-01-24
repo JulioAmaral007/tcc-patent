@@ -15,7 +15,7 @@ export async function fetchUserHistory() {
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   
   if (authError || !user) {
-    throw new Error('Usuário não autenticado')
+    throw new Error('User not authenticated')
   }
 
   const { data, error } = await supabase
@@ -25,7 +25,7 @@ export async function fetchUserHistory() {
     .order('created_at', { ascending: false })
 
   if (error) {
-    console.error('Erro ao buscar histórico:', error.message)
+    console.error('Error fetching history:', error.message)
     throw error
   }
 
@@ -40,7 +40,7 @@ export async function saveHistoryItem(content: any) {
   const { data: { user }, error: authError } = await supabase.auth.getUser()
 
   if (authError || !user) {
-    throw new Error('Usuário não autenticado para salvar histórico')
+    throw new Error('User not authenticated to save history')
   }
 
   const { data, error } = await supabase
@@ -54,7 +54,7 @@ export async function saveHistoryItem(content: any) {
     .select()
 
   if (error) {
-    console.error('Erro ao salvar item no histórico:', error.message)
+    console.error('Error saving history item:', error.message)
     throw error
   }
 
@@ -71,7 +71,7 @@ export async function deleteHistoryItem(id: string) {
     .eq('id', id)
 
   if (error) {
-    console.error('Erro ao deletar item do histórico:', error.message)
+    console.error('Error deleting history item:', error.message)
     throw error
   }
 }

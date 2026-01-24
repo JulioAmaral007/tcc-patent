@@ -30,7 +30,7 @@ export async function GET(request: Request) {
     const { data, error } = await supabase.auth.exchangeCodeForSession(code)
     
     if (!error && data.session) {
-      console.log('✅ [CALLBACK]: Login realizado com sucesso!')
+      console.log('✅ [CALLBACK]: Login successful!')
       
       // Cria uma URL com os tokens no fragmento para o cliente processar
       const redirectUrl = new URL(next, origin)
@@ -39,7 +39,7 @@ export async function GET(request: Request) {
       return NextResponse.redirect(redirectUrl.toString())
     }
     
-    console.error('❌ [CALLBACK]: Erro na troca de código:', error)
+    console.error('❌ [CALLBACK]: Error exchanging code:', error)
   }
 
   return NextResponse.redirect(`${origin}?error=auth_failed`)

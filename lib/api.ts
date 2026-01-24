@@ -43,65 +43,60 @@ export async function performImageSearch(options: {
 export function formatSimilarityResults(response: SearchByTextResponse): string {
   let result = `
 ═══════════════════════════════════════════════════════════════
-                  BUSCA POR SIMILARIDADE DE TEXTO
+                  TEXT SIMILARITY SEARCH
 ═══════════════════════════════════════════════════════════════
 
-📊 RESUMO DA BUSCA
+📊 SEARCH SUMMARY
 ─────────────────────────────────────────────────────────────
-• Total de patentes encontradas: ${response.total_found}
-• Limite de similaridade (Threshold): ${(response.similarity_threshold * 100).toFixed(0)}%
-• Resultados solicitados (Max): ${response.max_results}
-• Dimensão do embedding: ${response.query_embedding_dimension}
+• Total patents found: ${response.total_found}
+• Similarity Threshold: ${(response.similarity_threshold * 100).toFixed(0)}%
+• Requested results (Max): ${response.max_results}
+• Embedding dimension: ${response.query_embedding_dimension}
 
-📋 PATENTES SIMILARES
+📋 SIMILAR PATENTS
 ─────────────────────────────────────────────────────────────
 
 `
 
   response.similar_patents.forEach((patent, index) => {
-    result += `${index + 1}. ${patent.title || 'Sem título'}
-├── Nº Publicação: ${patent.publication_number || 'N/A'}
-├── Nº Depósito: ${patent.application_number || 'N/A'}
-├── Data: ${patent.publication_date || 'N/A'}
-├── Similaridade: ${(patent.similarity_score * 100).toFixed(1)}%
-├── Organização: ${patent.orgname || 'N/A'}
-├── Códigos IPC: ${patent.ipc_codes?.join(', ') || 'N/A'}
-└── Resumo: ${patent.abstract || 'N/A'}
+    result += `${index + 1}. ${patent.title || 'No title'}
+├── Publication No.: ${patent.publication_number || 'N/A'}
+├── Application No.: ${patent.application_number || 'N/A'}
+├── Date: ${patent.publication_date || 'N/A'}
+├── Similarity: ${(patent.similarity_score * 100).toFixed(1)}%
+├── Organization: ${patent.orgname || 'N/A'}
+├── IPC Codes: ${patent.ipc_codes?.join(', ') || 'N/A'}
+└── Abstract: ${patent.abstract || 'N/A'}
 
 `
   })
 
-  result += `
-═══════════════════════════════════════════════════════════════
-                      FIM DA BUSCA
-═══════════════════════════════════════════════════════════════
-`
   return result.trim()
 }
 
 export function formatChunksSimilarityResults(response: ChunksSimilarityResponse): string {
   let result = `
 ═══════════════════════════════════════════════════════════════
-                  BUSCA POR TRECHOS (CHUNKS)
+                  CHUNK SEARCH
 ═══════════════════════════════════════════════════════════════
 
-📊 RESUMO DA BUSCA
+📊 SEARCH SUMMARY
 ─────────────────────────────────────────────────────────────
-• Total de trechos encontrados: ${response.total_found}
-• Limite de similaridade: ${(response.similarity_threshold * 100).toFixed(0)}%
-• Dimensão do embedding: ${response.query_embedding_dimension}
+• Total chunks found: ${response.total_found}
+• Similarity Threshold: ${(response.similarity_threshold * 100).toFixed(0)}%
+• Embedding dimension: ${response.query_embedding_dimension}
 
-📋 TRECHOS SIMILARES
+📋 SIMILAR CHUNKS
 ─────────────────────────────────────────────────────────────
 
 `
 
   response.similar_patents.forEach((patent, index) => {
-    result += `${index + 1}. ${patent.title || 'Sem título'}
-├── Nº Publicação: ${patent.publication_number || 'N/A'}
-├── Similaridade: ${(patent.similarity_score * 100).toFixed(1)}%
-├── Organização: ${patent.orgname || 'N/A'}
-└── Trechos Relacionados:
+    result += `${index + 1}. ${patent.title || 'No title'}
+├── Publication No.: ${patent.publication_number || 'N/A'}
+├── Similarity: ${(patent.similarity_score * 100).toFixed(1)}%
+├── Organization: ${patent.orgname || 'N/A'}
+└── Related Chunks:
 `
     patent.chunks?.forEach((chunk: string, cIdx: number) => {
       const char = (patent.chunks && cIdx === patent.chunks.length - 1) ? '   └──' : '   ├──'
@@ -110,48 +105,38 @@ export function formatChunksSimilarityResults(response: ChunksSimilarityResponse
     result += '\n'
   })
 
-  result += `
-═══════════════════════════════════════════════════════════════
-                      FIM DA BUSCA
-═══════════════════════════════════════════════════════════════
-`
   return result.trim()
 }
 
 export function formatImageSimilarityResults(response: ImagesSearchResponse): string {
   let result = `
 ═══════════════════════════════════════════════════════════════
-                 BUSCA POR SIMILARIDADE DE IMAGEM
+                 IMAGE SIMILARITY SEARCH
 ═══════════════════════════════════════════════════════════════
 
-📊 RESUMO DA BUSCA
+📊 SEARCH SUMMARY
 ─────────────────────────────────────────────────────────────
-• Total de imagens encontradas: ${response.total_found}
-• Limite de similaridade: ${(response.similarity_threshold * 100).toFixed(0)}%
-• Dimensão do embedding: ${response.query_embedding_dimension}
+• Total images found: ${response.total_found}
+• Similarity Threshold: ${(response.similarity_threshold * 100).toFixed(0)}%
+• Embedding dimension: ${response.query_embedding_dimension}
 
-🖼️ IMAGENS SIMILARES
+🖼️ SIMILAR IMAGES
 ─────────────────────────────────────────────────────────────
 
 `
 
   response.similar_images.forEach((image, index) => {
-    result += `${index + 1}. ${image.title || 'Sem título'}
-├── ID da Imagem: ${image.image_id}
-├── Nº Publicação: ${image.publication_number || 'N/A'}
-├── Arquivo: ${image.image_filename || 'N/A'}
-├── Similaridade: ${(image.similarity_score * 100).toFixed(1)}%
-├── Data: ${image.publication_date || 'N/A'}
-├── Organização: ${image.orgname || 'N/A'}
-└── Resumo: ${image.abstract || 'N/A'}
+    result += `${index + 1}. ${image.title || 'No title'}
+├── Image ID: ${image.image_id}
+├── Publication No.: ${image.publication_number || 'N/A'}
+├── File: ${image.image_filename || 'N/A'}
+├── Similarity: ${(image.similarity_score * 100).toFixed(1)}%
+├── Date: ${image.publication_date || 'N/A'}
+├── Organization: ${image.orgname || 'N/A'}
+└── Abstract: ${image.abstract || 'N/A'}
 
 `
   })
 
-  result += `
-═══════════════════════════════════════════════════════════════
-                      FIM DA BUSCA
-═══════════════════════════════════════════════════════════════
-`
   return result.trim()
 }

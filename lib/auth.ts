@@ -12,7 +12,7 @@ export async function signInWithGoogle() {
   })
 
   if (error) {
-    console.error('Erro ao fazer login com Google:', error.message)
+    console.error('Error signing in with Google:', error.message)
     throw error
   }
 
@@ -20,12 +20,12 @@ export async function signInWithGoogle() {
 }
 
 /**
- * Faz logout do usuário atual
+ * Signs out the current user
  */
 export async function signOut() {
   const { error } = await supabase.auth.signOut()
   if (error) {
-    console.error('Erro ao fazer logout:', error.message)
+    console.error('Error signing out:', error.message)
     throw error
   }
 }

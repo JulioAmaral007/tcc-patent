@@ -5,7 +5,7 @@ let pdfjsLib: typeof import('pdfjs-dist') | null = null
 
 async function getPdfjsLib() {
   if (typeof window === 'undefined') {
-    throw new Error('PDF.js só pode ser usado no navegador')
+    throw new Error('PDF.js can only be used in the browser')
   }
 
   if (!pdfjsLib) {
@@ -69,7 +69,7 @@ export async function extractTextFromPDF(
   for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
     if (onProgress) {
       onProgress({
-        status: `Processando página ${pageNum} de ${totalPages}`,
+        status: `Processing page ${pageNum} of ${totalPages}`,
         progress: pageNum / totalPages,
       })
     }
@@ -96,7 +96,7 @@ export async function processFile(
     const result = await extractTextFromImage(file, onProgress)
     return result.text
   } else {
-    throw new Error(`Tipo de arquivo não suportado: ${fileType}`)
+    throw new Error(`Unsupported file type: ${fileType}`)
   }
 }
 
@@ -113,6 +113,6 @@ export function isValidFileType(file: File): boolean {
 
 export function getFileTypeLabel(file: File): string {
   if (file.type === 'application/pdf') return 'PDF'
-  if (file.type.startsWith('image/')) return 'Imagem'
-  return 'Arquivo'
+  if (file.type.startsWith('image/')) return 'Image'
+  return 'File'
 }

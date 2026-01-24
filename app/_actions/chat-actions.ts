@@ -4,9 +4,9 @@ import { createClient } from "@/lib/supabase-server";
 import { GoogleGenAI } from "@google/genai";
 
 /**
- * Server Action refactorada para nomes em inglês e novo schema do Supabase.
+ * Server Action refactored for English names and new Supabase schema.
  */
-export async function processarChatComIAAction(
+export async function processChatWithAIAction(
   conversationId: string,
   userMessage: string,
   apiContext: string
@@ -95,9 +95,9 @@ export async function processarChatComIAAction(
 }
 
 /**
- * Busca todas as mensagens de uma conversa específica.
+ * Fetches all messages from a specific conversation.
  */
-export async function buscarMensagensAction(conversationId: string) {
+export async function fetchMessagesAction(conversationId: string) {
   const supabase = await createClient();
   
   const { data, error } = await supabase

@@ -123,12 +123,12 @@ export function formatAnalysisDate(timestamp: number): string {
   const diffHours = Math.floor(diffMs / 3600000)
   const diffDays = Math.floor(diffMs / 86400000)
 
-  if (diffMins < 1) return 'Agora'
-  if (diffMins < 60) return `${diffMins} min atrás`
-  if (diffHours < 24) return `${diffHours} h atrás`
-  if (diffDays < 7) return `${diffDays} dias atrás`
+  if (diffMins < 1) return 'Now'
+  if (diffMins < 60) return `${diffMins} min ago`
+  if (diffHours < 24) return `${diffHours} h ago`
+  if (diffDays < 7) return `${diffDays} days ago`
 
-  return date.toLocaleDateString('pt-BR', {
+  return date.toLocaleDateString('en-US', {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
