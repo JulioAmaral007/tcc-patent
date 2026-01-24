@@ -10,7 +10,9 @@ import {
   PatentsSimilarityParams,
   PatentsSimilarityResponse,
   ChunksSimilarityParams,
-  ChunksSimilarityResponse
+  ChunksSimilarityResponse,
+  ListPatentsParams,
+  ListPatentsResponse
 } from '@/lib/types'
 
 /**
@@ -88,6 +90,18 @@ export async function searchPatentsByChunksAction(params: ChunksSimilarityParams
   }
 }
 
+export async function listPatentsAction(params: ListPatentsParams): Promise<ListPatentsResponse> {
+  try {
+    const { data } = await externalApiClient.get<ListPatentsResponse>('/v1/patents/', {
+      params
+    })
+    return data
+  } catch (error) {
+    console.error('[Action] listPatents error:', error)
+    throw error
+  }
+}
+
 /**
  * Orquestra a geração de embeddings e a busca por similaridade em uma única ação.
  */
@@ -101,7 +115,7 @@ export async function searchSimilarPatentsWithTextAction(params: {
     const embedData = await generateEmbeddingsAction({ text: params.text })
     
     if (!embedData.embeddings || embedData.embeddings.length === 0) {
-      throw new Error('Falha ao gerar embeddings: Nenhum embedding retornado.')
+      throw new Error('Failed to generate embeddings: No embedding returned.')
     }
 
     // 2. Usa o primeiro embedding para buscar patentes similares
@@ -115,6 +129,36 @@ export async function searchSimilarPatentsWithTextAction(params: {
     return similarityResponse
   } catch (error) {
     console.error('[Action] searchSimilarPatentsWithText error:', error)
+    throw error
+  }
+}
+
+/**
+ * Orquestra a geração de embeddings e a busca por trechos (chunks) similares em uma única ação.
+ */
+export async function searchPatentsByChunksWithTextAction(params: {
+  text: string
+  max_results: number
+  similarity_threshold: number
+}): Promise<ChunksSimilarityResponse> {
+  try {
+    // 1. Gera o embedding para o texto fornecido
+    const embedData = await generateEmbeddingsAction({ text: params.text })
+    
+    if (!embedData.embeddings || embedData.embeddings.length === 0) {
+      throw new Error('Failed to generate embeddings: No embedding returned.')
+    }
+
+    // 2. Usa o primeiro embedding para buscar chunks similares
+    const chunksResponse = await searchPatentsByChunksAction({
+      embedding: embedData.embeddings[0],
+      max_results: params.max_results,
+      similarity_threshold: params.similarity_threshold
+    })
+
+    return chunksResponse
+  } catch (error) {
+    console.error('[Action] searchPatentsByChunksWithText error:', error)
     throw error
   }
 }

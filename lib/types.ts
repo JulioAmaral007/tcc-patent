@@ -129,6 +129,44 @@ export interface ChunksSimilarityResponse {
 }
 
 // ========================================
+// Route: /patents/
+// ========================================
+export interface ListPatentsParams {
+  page?: number
+  page_size?: number
+  sort_by?: string
+  sort_order?: 'asc' | 'desc'
+}
+
+export interface Patent {
+  publication_number: string
+  publication_date: string
+  publication_year: number
+  application_number: string
+  title: string
+  abstract: string
+  description: string
+  ipc_codes: string[]
+  orgname: string
+  maingroup: string
+  subgroup: string
+  embedding: number[]
+  has_embedding: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface ListPatentsResponse {
+  patents: Patent[]
+  total_count: number
+  page: number
+  page_size: number
+  total_pages: number
+  has_next: boolean
+  has_previous: boolean
+}
+
+// ========================================
 // Shared Slider Configuration
 // ========================================
 export interface SliderConfig {
@@ -151,8 +189,8 @@ export const API_DEFAULTS = {
 export const SLIDER_CONFIGS: Record<string, SliderConfig> = {
   similarity_threshold: {
     id: 'similarity_threshold',
-    label: 'Limiar de Similaridade',
-    description: 'Define o limite mínimo de similaridade (0-1). Valores mais altos retornam resultados mais relevantes.',
+    label: 'Similarity Threshold',
+    description: 'Defines the minimum similarity threshold (0-1). Higher values return more relevant results.',
     min: 0,
     max: 1,
     step: 0.05,
@@ -160,8 +198,8 @@ export const SLIDER_CONFIGS: Record<string, SliderConfig> = {
   },
   max_results: {
     id: 'max_results',
-    label: 'Máximo de Resultados',
-    description: 'Número máximo de patentes retornadas pela busca (1-100).',
+    label: 'Maximum Results',
+    description: 'Maximum number of patents returned by the search (1-100).',
     min: 1,
     max: 100,
     step: 1,
