@@ -19,6 +19,7 @@ export interface PatentsSimilarityParams {
   embedding: number[]
   max_results: number
   similarity_threshold: number
+  conversation_id?: string
 }
 
 export interface SimilarPatent {
@@ -54,6 +55,7 @@ export interface SearchByTextParams {
   similarity_threshold: number
   max_results: number
   use_chunks: boolean
+  conversation_id?: string
 }
 
 export type SearchByTextResponse = PatentsSimilarityResponse
@@ -100,6 +102,7 @@ export interface ChunksSimilarityParams {
   embedding: number[]
   max_results: number
   similarity_threshold: number
+  conversation_id?: string
 }
 
 export interface SimilarPatentByChunks {
