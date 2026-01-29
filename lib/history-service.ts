@@ -1,17 +1,25 @@
 import { supabase } from './supabase'
 
 export interface HistoryItem {
-  id?: string
-  user_id?: string
-  content: any
-  created_at?: string
+  id: string
+  user_id: string
+  conversation_id: string | null
+  endpoint: string
+  similarity_threshold: number
+  max_results_requested: number
+  total_files_returned: number
+  request_payload: any
+  response_payload: any
+  latency_ms: number
+  status: 'success' | 'error'
+  error_message: string | null
+  created_at: string
 }
 
 /**
- * Busca o histórico do usuário logado
+ * Busca o histórico do usuário logado na nova tabela api_request_history
  */
 export async function fetchUserHistory() {
-  // Garantimos que o usuário está validado
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   
   if (authError || !user) {
@@ -19,7 +27,7 @@ export async function fetchUserHistory() {
   }
 
   const { data, error } = await supabase
-    .from('history')
+    .from('api_request_history')
     .select('*')
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
@@ -33,40 +41,12 @@ export async function fetchUserHistory() {
 }
 
 /**
- * Salva um novo item no histórico vinculado ao usuário atual
- */
-export async function saveHistoryItem(content: any) {
-  // O getUser() é o método mais seguro para validar o JWT no client
-  const { data: { user }, error: authError } = await supabase.auth.getUser()
-
-  if (authError || !user) {
-    throw new Error('User not authenticated to save history')
-  }
-
-  const { data, error } = await supabase
-    .from('history')
-    .insert([
-      { 
-        user_id: user.id, 
-        content: content 
-      }
-    ])
-    .select()
-
-  if (error) {
-    console.error('Error saving history item:', error.message)
-    throw error
-  }
-
-  return data[0]
-}
-
-/**
- * Deleta um item do histórico
+ * Deleta um item do histórico (permitido pelo RLS se necessário, 
+ * mas geralmente logs são permanentes. Mantendo para compatibilidade de UI se houver botão de excluir)
  */
 export async function deleteHistoryItem(id: string) {
   const { error } = await supabase
-    .from('history')
+    .from('api_request_history')
     .delete()
     .eq('id', id)
 

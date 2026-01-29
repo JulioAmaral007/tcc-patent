@@ -1,6 +1,10 @@
-// Utilitário para gerenciar histórico de análises (LocalStorage + Supabase)
 import { supabase } from './supabase'
-import { saveHistoryItem, fetchUserHistory, deleteHistoryItem } from './history-service'
+import { fetchUserHistory, deleteHistoryItem } from './history-service'
+import { 
+  formatSimilarityResults, 
+  formatChunksSimilarityResults, 
+  formatImageSimilarityResults 
+} from './api'
 
 export interface AnalysisHistory {
   id: string
@@ -9,20 +13,28 @@ export interface AnalysisHistory {
   result: string
   inputType: 'text' | 'image'
   fileName?: string
+  conversation_id?: string
+  endpoint?: string
+  request_payload?: any
 }
 
 const STORAGE_KEY = 'patent-analysis-history'
 const MAX_HISTORY_ITEMS = 50
 
 /**
- * Salva uma nova análise no histórico
- * Se o usuário estiver logado, salva no Supabase. Caso contrário, apenas no localStorage.
+ * Salva uma nova análise no histórico local.
+ * O log no Supabase agora é automático via Server Actions (api_request_history).
  */
 export async function saveAnalysisToHistory(
   inputText: string,
   result: string,
   inputType: 'text' | 'image' = 'text',
   fileName?: string,
+  extra?: {
+    conversation_id?: string
+    endpoint?: string
+    request_payload?: any
+  }
 ): Promise<AnalysisHistory> {
   const analysis: AnalysisHistory = {
     id: `analysis-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -31,6 +43,9 @@ export async function saveAnalysisToHistory(
     result,
     inputType,
     fileName,
+    conversation_id: extra?.conversation_id,
+    endpoint: extra?.endpoint,
+    request_payload: extra?.request_payload
   }
 
   // Sempre salva no localStorage para persistência offline/convidado
@@ -41,16 +56,6 @@ export async function saveAnalysisToHistory(
     localStorage.setItem(STORAGE_KEY, JSON.stringify(newLocalHistory))
   } catch (error) {
     console.error('Erro ao salvar histórico local:', error)
-  }
-
-  // Tenta salvar no Supabase se estiver logado
-  try {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (user) {
-      await saveHistoryItem(analysis)
-    }
-  } catch (error) {
-    console.error('Erro ao sincronizar com Supabase:', error)
   }
 
   return analysis
@@ -65,10 +70,41 @@ export async function getFullHistory(): Promise<AnalysisHistory[]> {
     
     if (user) {
       const supabaseItems = await fetchUserHistory()
-      return supabaseItems.map(item => ({
-        ...item.content,
-        id: item.id, // Usa o ID do banco de dados
-      })) as AnalysisHistory[]
+      return supabaseItems.map(item => {
+        const isImage = item.endpoint.includes('images')
+        const inputText = isImage 
+          ? (item.request_payload.filename || 'Imagem')
+          : (item.request_payload.text || 'Busca por texto')
+        
+        let result = item.status === 'success' ? 'Análise concluída' : 'Erro na análise'
+        
+        // Reconstrói o resultado formatado a partir do payload de resposta salvo
+        if (item.status === 'success' && item.response_payload) {
+          try {
+            if (item.endpoint.includes('/search/by-text') || item.endpoint.includes('/patents/similarity')) {
+              result = formatSimilarityResults(item.response_payload)
+            } else if (item.endpoint.includes('/chunks/similarity')) {
+              result = formatChunksSimilarityResults(item.response_payload)
+            } else if (item.endpoint.includes('/images/search')) {
+              result = formatImageSimilarityResults(item.response_payload)
+            }
+          } catch (e) {
+            console.error('Erro ao formatar resultado do histórico:', e)
+          }
+        }
+        
+        return {
+          id: item.id,
+          timestamp: new Date(item.created_at).getTime(),
+          inputText: inputText,
+          result: result,
+          inputType: isImage ? 'image' : 'text',
+          fileName: isImage ? item.request_payload.filename : undefined,
+          conversation_id: item.conversation_id,
+          endpoint: item.endpoint,
+          request_payload: item.request_payload
+        }
+      }) as AnalysisHistory[]
     }
   } catch (error) {
     console.error('Erro ao buscar histórico do Supabase, usando local:', error)
@@ -99,7 +135,7 @@ export function getAnalysisHistory(): AnalysisHistory[] {
 
 export async function removeAnalysisFromHistory(id: string): Promise<boolean> {
   try {
-    // Tenta remover do Supabase se for um ID de UUID
+    // Tenta remover do Supabase se for um ID de UUID (tamanho padrão > 30)
     if (id.length > 20) { 
       await deleteHistoryItem(id)
     }
