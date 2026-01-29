@@ -17,15 +17,16 @@ interface ChatMessageData {
 
 interface ChatPanelProps {
   analysisResult: string
+  initialConversationId?: string
 }
 
-export function ChatPanel({ analysisResult }: ChatPanelProps) {
+export function ChatPanel({ analysisResult, initialConversationId }: ChatPanelProps) {
   const [messages, setMessages] = useState<ChatMessageData[]>([])
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   
   const [conversationId] = useState(() => {
-    return crypto.randomUUID() 
+    return initialConversationId || crypto.randomUUID() 
   })
 
   const messagesEndRef = useRef<HTMLDivElement>(null)

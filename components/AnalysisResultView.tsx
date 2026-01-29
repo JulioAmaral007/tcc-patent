@@ -6,11 +6,13 @@ import { ResultViewer } from '@/components/ResultViewer'
 interface AnalysisResultViewProps {
   result: string
   onNewAnalysis: () => void
+  conversationId?: string
 }
 
 export function AnalysisResultView({
   result,
   onNewAnalysis,
+  conversationId,
 }: AnalysisResultViewProps) {
   return (
     <div className="flex-1 overflow-hidden p-6 animate-fade-in">
@@ -38,7 +40,7 @@ export function AnalysisResultView({
               isLoading={false} 
             />
           </div>
-          <ChatPanel analysisResult={result} />
+          <ChatPanel analysisResult={result} initialConversationId={conversationId} />
         </div>
       </div>
     </div>
