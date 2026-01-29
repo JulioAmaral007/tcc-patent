@@ -1,46 +1,56 @@
 import { NextResponse } from 'next/server'
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
+import { createClient } from '@/lib/supabase-server'
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
   const next = searchParams.get('next') ?? '/'
 
+  console.log('🔐 [Auth Callback] Iniciando troca de código:', { code: !!code, next })
+
   if (code) {
-    const cookieStore = await cookies()
-
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll()
-          },
-          setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value, options }) => {
-              cookieStore.set({ name, value, ...options })
-            })
-          },
-        },
-      }
-    )
-
+    const supabase = await createClient()
     const { data, error } = await supabase.auth.exchangeCodeForSession(code)
     
-    if (!error && data.session) {
-      console.log('✅ [CALLBACK]: Login successful!')
+    if (!error) {
+      console.log('✅ [Auth Callback] Sessão obtida com sucesso para:', data.user?.email)
       
-      // Cria uma URL com os tokens no fragmento para o cliente processar
-      const redirectUrl = new URL(next, origin)
-      redirectUrl.hash = `access_token=${data.session.access_token}&refresh_token=${data.session.refresh_token}&expires_in=${data.session.expires_in}&token_type=bearer`
+      // GARANTIA: Sincroniza o usuário manualmente na tabela public.users
+      const user = data.user
+      if (user) {
+        try {
+          const { error: syncError } = await supabase.from('users').upsert({
+            id: user.id,
+            name: user.user_metadata?.full_name || user.user_metadata?.name || 'Usuário',
+            email: user.email,
+            created_at: new Date().toISOString()
+          }, { onConflict: 'id' })
+          
+          if (syncError) {
+            console.error('⚠️ [Auth Callback] Erro ao sincronizar usuário:', syncError.message)
+          } else {
+            console.log('✨ [Auth Callback] Usuário sincronizado em public.users')
+          }
+        } catch (syncErr) {
+          console.error('❌ [Auth Callback] Exceção na sincronização:', syncErr)
+        }
+      }
+
+      const forwardedHost = request.headers.get('x-forwarded-host') 
+      const isLocalEnv = process.env.NODE_ENV === 'development'
       
-      return NextResponse.redirect(redirectUrl.toString())
+      if (isLocalEnv) {
+        return NextResponse.redirect(`${origin}${next}`)
+      } else if (forwardedHost) {
+        return NextResponse.redirect(`https://${forwardedHost}${next}`)
+      } else {
+        return NextResponse.redirect(`${origin}${next}`)
+      }
+    } else {
+      console.error('❌ [Auth Callback] Erro na troca de código:', error.message)
     }
-    
-    console.error('❌ [CALLBACK]: Error exchanging code:', error)
   }
 
-  return NextResponse.redirect(`${origin}?error=auth_failed`)
+  console.warn('⚠️ [Auth Callback] Falha na autenticação ou código ausente')
+  return NextResponse.redirect(`${origin}/?error=auth_failed`)
 }
