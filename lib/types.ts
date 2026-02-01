@@ -20,6 +20,7 @@ export interface PatentsSimilarityParams {
   max_results: number
   similarity_threshold: number
   conversation_id?: string
+  text?: string // Added for logging purposes
 }
 
 export interface SimilarPatent {
@@ -103,6 +104,7 @@ export interface ChunksSimilarityParams {
   max_results: number
   similarity_threshold: number
   conversation_id?: string
+  text?: string // Added for logging purposes
 }
 
 export interface SimilarPatentByChunks {

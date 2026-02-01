@@ -173,7 +173,7 @@ export async function searchSimilarImagesAction(
 export async function searchSimilarPatentsAction(params: PatentsSimilarityParams): Promise<PatentsSimilarityResponse> {
   const start = Date.now()
   try {
-    const { conversation_id, ...apiParams } = params
+    const { conversation_id, text, ...apiParams } = params
     const { data } = await externalApiClient.post<PatentsSimilarityResponse>('/v1/patents/similarity', apiParams)
     
     await logApiRequest({
@@ -210,7 +210,7 @@ export async function searchSimilarPatentsAction(params: PatentsSimilarityParams
 export async function searchPatentsByChunksAction(params: ChunksSimilarityParams): Promise<ChunksSimilarityResponse> {
   const start = Date.now()
   try {
-    const { conversation_id, ...apiParams } = params
+    const { conversation_id, text, ...apiParams } = params
     const { data } = await externalApiClient.post<ChunksSimilarityResponse>('/v1/patents/chunks/similarity', apiParams)
     
     await logApiRequest({
@@ -273,7 +273,8 @@ export async function searchSimilarPatentsWithTextAction(params: {
       embedding: embedData.embeddings[0],
       max_results: params.max_results,
       similarity_threshold: params.similarity_threshold,
-      conversation_id: params.conversation_id
+      conversation_id: params.conversation_id,
+      text: params.text
     })
 
     return similarityResponse
@@ -300,7 +301,8 @@ export async function searchPatentsByChunksWithTextAction(params: {
       embedding: embedData.embeddings[0],
       max_results: params.max_results,
       similarity_threshold: params.similarity_threshold,
-      conversation_id: params.conversation_id
+      conversation_id: params.conversation_id,
+      text: params.text
     })
 
     return chunksResponse

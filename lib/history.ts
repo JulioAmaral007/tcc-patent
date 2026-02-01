@@ -16,6 +16,7 @@ export interface AnalysisHistory {
   conversation_id?: string
   endpoint?: string
   request_payload?: any
+  response_payload?: any
 }
 
 const STORAGE_KEY = 'patent-analysis-history'
@@ -34,6 +35,7 @@ export async function saveAnalysisToHistory(
     conversation_id?: string
     endpoint?: string
     request_payload?: any
+    response_payload?: any
   }
 ): Promise<AnalysisHistory> {
   const analysis: AnalysisHistory = {
@@ -45,7 +47,8 @@ export async function saveAnalysisToHistory(
     fileName,
     conversation_id: extra?.conversation_id,
     endpoint: extra?.endpoint,
-    request_payload: extra?.request_payload
+    request_payload: extra?.request_payload,
+    response_payload: extra?.response_payload
   }
 
   // Sempre salva no localStorage para persistência offline/convidado
@@ -74,7 +77,7 @@ export async function getFullHistory(): Promise<AnalysisHistory[]> {
         const isImage = item.endpoint.includes('images')
         const inputText = isImage 
           ? (item.request_payload.filename || 'Imagem')
-          : (item.request_payload.text || 'Busca por texto')
+          : (item.request_payload.text || item.request_payload.q || 'Busca por texto')
         
         let result = item.status === 'success' ? 'Análise concluída' : 'Erro na análise'
         
@@ -173,7 +176,8 @@ export function formatAnalysisDate(timestamp: number): string {
   })
 }
 
-export function getTextPreview(text: string, maxLength: number = 60): string {
+export function getTextPreview(text: string | undefined | null, maxLength: number = 60): string {
+  if (!text) return ''
   if (text.length <= maxLength) return text
   return text.substring(0, maxLength).trim() + '...'
 }
