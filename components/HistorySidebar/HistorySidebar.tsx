@@ -92,7 +92,7 @@ export function HistorySidebar({
           </div>
         </div>
 
-        <ScrollArea className="flex-1 scrollbar-custom">
+        <ScrollArea className="flex-1 min-h-0 scrollbar-custom" type="auto">
           {filteredHistory.length === 0 ? (
             <div className="p-8 text-center space-y-4">
               <div className="w-16 h-16 rounded-2xl bg-muted/30 flex items-center justify-center mx-auto">
