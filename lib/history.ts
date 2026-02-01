@@ -117,6 +117,22 @@ export async function getFullHistory(): Promise<AnalysisHistory[]> {
 }
 
 /**
+ * Recupera uma análise específica pelo ID.
+ * Procura primeiro no histórico local (mais rápido e contém itens recém-criados)
+ * e depois no histórico completo (que inclui Supabase).
+ */
+export async function getAnalysisById(id: string): Promise<AnalysisHistory | null> {
+  // 1. Tenta encontrar no histórico local primeiro
+  const localItems = getLocalHistory()
+  const localMatch = localItems.find(item => item.id === id)
+  if (localMatch) return localMatch
+
+  // 2. Se não encontrar, busca no histórico completo (incluindo Supabase)
+  const history = await getFullHistory()
+  return history.find(item => item.id === id) || null
+}
+
+/**
  * Funções auxiliares internas
  */
 function getLocalHistory(): AnalysisHistory[] {
