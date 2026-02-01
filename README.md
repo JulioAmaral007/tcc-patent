@@ -1,16 +1,14 @@
 # Patent Analyzer
 
-Uma aplicação web moderna para análise de patentes com suporte a OCR (Reconhecimento Óptico de Caracteres) integrado. Permite extrair texto de imagens e PDFs e realizar análises inteligentes de documentos de patentes.
+Uma aplicação web moderna para análise de patentes. Permite realizar análises inteligentes de documentos de patentes.
 
 ## 🚀 Funcionalidades
 
 - **Análise de Patentes**: Processamento inteligente de textos de patentes
-- **OCR Integrado**: Extração de texto de imagens (PNG, JPEG, WebP) e PDFs
 - **Interface Moderna**: Design responsivo com suporte a tema claro/escuro
-- **Upload de Arquivos**: Suporte para upload de imagens e documentos PDF
+- **Upload de Arquivos**: Suporte para busca por imagens
 - **Entrada de Texto**: Digitação ou colagem manual de texto
 - **Estatísticas em Tempo Real**: Contagem de palavras, caracteres e parágrafos
-- **Processamento Local**: OCR executado diretamente no navegador (privacidade garantida)
 - **Feedback Visual**: Barras de progresso e notificações para acompanhar o processamento
 
 ## 🛠️ Tecnologias
@@ -19,7 +17,6 @@ Uma aplicação web moderna para análise de patentes com suporte a OCR (Reconhe
 - **[React 19](https://react.dev/)** - Biblioteca UI
 - **[TypeScript](https://www.typescriptlang.org/)** - Tipagem estática
 - **[Tailwind CSS](https://tailwindcss.com/)** - Estilização
-- **[Tesseract.js](https://tesseract.projectnaptha.com/)** - OCR para imagens
 - **[PDF.js](https://mozilla.github.io/pdf.js/)** - Processamento de PDFs
 - **[Radix UI](https://www.radix-ui.com/)** - Componentes acessíveis
 - **[Sonner](https://sonner.emilkowal.ski/)** - Notificações toast
@@ -70,10 +67,9 @@ npm run dev
 
 ### Análise por Upload
 
-1. Na aba **Upload**, arraste e solte ou selecione um arquivo (imagem ou PDF)
-2. Clique em **Extrair Texto (OCR)** para processar o arquivo
-3. O texto extraído será adicionado automaticamente ao campo de texto
-4. Clique em **Analisar Patente** para processar
+1. Na aba **Upload**, arraste e solte ou selecione uma imagem
+2. Clique em **Pesquisar por Imagem** para processar
+3. Visualize os resultados no painel direito
 
 ### Formatos Suportados
 
@@ -97,7 +93,6 @@ tcc-patent/
 │   ├── patent-api-utils.ts       # Configuração Axios (lado do servidor)
 │   ├── api.ts                    # Wrapper de API (lado do cliente)
 │   ├── types.ts                  # Tipos TypeScript
-│   ├── ocr.ts                    # Lógica de OCR
 │   └── utils.ts                  # Funções utilitárias
 ├── docs/                         # Documentação
 │   └── ENV_SETUP.md              # Configuração de variáveis de ambiente
@@ -155,17 +150,7 @@ Os estilos são definidos usando Tailwind CSS. As cores e variáveis de tema pod
 
 ## 🔒 Privacidade
 
-- O processamento OCR é executado **localmente no navegador** usando Tesseract.js
-- Nenhum dado é enviado para servidores externos durante a extração de texto
 - A análise de patentes pode ser configurada para usar uma API externa (conforme configuração)
-
-## 🐛 Solução de Problemas
-
-### OCR não funciona
-
-- Certifique-se de que está usando um navegador moderno (Chrome, Firefox, Edge)
-- Verifique se o arquivo está em um formato suportado
-- Para PDFs, certifique-se de que o documento contém texto selecionável (não apenas imagens)
 
 ### Erro ao processar arquivo
 
