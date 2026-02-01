@@ -35,8 +35,6 @@ import {
   type AnalysisHistory,
 } from '@/lib/history'
 
-import { processFile, type OCRProgress } from '@/lib/ocr'
-
 type TabType = 'text' | 'image'
 
 import { Sidebar } from '@/components/Sidebar'
@@ -120,7 +118,7 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState<TabType>('text')
   const [textInput, setTextInput] = useState('')
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
-  const [extractedText, setExtractedText] = useState('')
+
   
   // Search Settings State
   const [searchParams, setSearchParams] = useState<SearchParams>({
@@ -133,8 +131,7 @@ export default function Home() {
   const [currentConversationId, setCurrentConversationId] = useState<string | undefined>(undefined)
   const [isProcessing, setIsProcessing] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [ocrProgress, setOcrProgress] = useState<OCRProgress | null>(null)
-  const [processingStage, setProcessingStage] = useState<'ocr' | 'api' | 'similarity' | null>(null)
+  const [processingStage, setProcessingStage] = useState<'api' | 'similarity' | null>(null)
 
   // Derived State
   const hasResult = useMemo(() => result !== null, [result])
@@ -153,31 +150,26 @@ export default function Home() {
 
   const handleFileSelect = useCallback((file: File) => {
     setSelectedFile(file)
-    setExtractedText('')
     setError(null)
   }, [])
 
   const handleClearFile = useCallback(() => {
     setSelectedFile(null)
-    setExtractedText('')
     setError(null)
   }, [])
 
   const handleClearAll = useCallback(() => {
     setTextInput('')
     setSelectedFile(null)
-    setExtractedText('')
     setResult(null)
     setCurrentConversationId(undefined)
     setError(null)
-    setOcrProgress(null)
     setProcessingStage(null)
   }, [])
 
   const handleSelectAnalysis = useCallback(async (analysis: AnalysisHistory) => {
     setTextInput(analysis.inputText)
     setSelectedFile(null)
-    setExtractedText('')
     setCurrentConversationId(analysis.conversation_id)
     
     // Se tiver payload de requisição e for uma busca do banco, "refaz" a requisição para atualizar o estado
@@ -229,32 +221,7 @@ export default function Home() {
     })
   }, [])
 
-  const handleProcessOCR = useCallback(async () => {
-    if (!selectedFile) return
 
-    setIsProcessing(true)
-    setError(null)
-    setProcessingStage('ocr')
-    setOcrProgress({ status: 'Starting...', progress: 0 })
-
-    try {
-      const text = await processFile(selectedFile, setOcrProgress)
-      setExtractedText(text)
-      setTextInput((prev) => prev + (prev ? '\n\n' : '') + text)
-
-      toast.success('Text extracted!', {
-        description: `${text.length.toLocaleString()} characters extracted from the file.`,
-      })
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Error processing file.'
-      setError(msg)
-      toast.error('OCR Error', { description: msg })
-    } finally {
-      setIsProcessing(false)
-      setProcessingStage(null)
-      setOcrProgress(null)
-    }
-  }, [selectedFile])
 
   // --- Search Logic ---
 
@@ -347,7 +314,6 @@ export default function Home() {
 
     setProcessingStage('similarity')
     
-    // Using searchSimilarImagesAction directly to pass conversationId
     const arrayBuffer = await selectedFile.arrayBuffer()
     const response = await searchSimilarImagesAction(
       arrayBuffer,
@@ -448,7 +414,9 @@ export default function Home() {
         {hasResult && result ? (
           <AnalysisResultView
             result={result}
-            onNewAnalysis={() => setResult(null)}
+            onNewAnalysis={() => {
+              setResult(null)
+            }}
             conversationId={currentConversationId}
           />
         ) : (
@@ -461,14 +429,11 @@ export default function Home() {
             selectedFile={selectedFile}
             onFileSelect={handleFileSelect}
             onClearFile={handleClearFile}
-            onProcessOCR={handleProcessOCR}
-            extractedText={extractedText}
             hasContent={hasContent}
             onClearAll={handleClearAll}
             searchParams={searchParams}
             onSearchParamsChange={setSearchParams}
             onSubmit={handleSubmit}
-            ocrProgress={ocrProgress}
             processingStage={processingStage}
             error={error}
             onDismissError={() => setError(null)}
