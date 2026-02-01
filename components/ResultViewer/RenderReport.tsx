@@ -1,13 +1,22 @@
 'use client'
 
-import { Search, Image as ImageIcon, FileText } from 'lucide-react'
+import { Search, Image as ImageIcon, FileText, ChevronDown, ChevronUp } from 'lucide-react'
 import { DetailItem } from './DetailItem'
+import { PatentImageGallery } from './PatentImageGallery'
+import { useState } from 'react'
+import { Button } from '@/components/ui/button'
 
 interface RenderReportProps {
   text: string
 }
 
 export function RenderReport({ text }: RenderReportProps) {
+  const [expandedImages, setExpandedImages] = useState<Record<number, boolean>>({})
+
+  const toggleImages = (idx: number) => {
+    setExpandedImages(prev => ({ ...prev, [idx]: !prev[idx] }))
+  }
+
   // Tenta extrair partes do relatório (formato padrão gerado pelos formatters)
   const lines = text.split('\n')
   
@@ -90,18 +99,40 @@ export function RenderReport({ text }: RenderReportProps) {
             const title = itemLines[0]
             const details = itemLines.slice(1)
 
+            // Extrair o número de publicação para buscar as imagens
+            // Procura por linhas como "Publicação: US-1234567-B2" ou "Publication: US1234567B2"
+            const pubLine = details.find(d => d.toLowerCase().includes('publicação') || d.toLowerCase().includes('publication'))
+            const publicationNumber = pubLine ? pubLine.split(':')[1]?.trim() : null
+
             return (
               <div key={idx} className="group relative">
                 {/* Efeito de brilho ao passar o mouse */}
                 <div className="absolute -inset-2 bg-gradient-to-r from-primary/5 to-transparent rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
                 
                 <div className="relative bg-muted/30 border border-border/50 rounded-2xl p-5 hover:border-primary/30 transition-all shadow-sm">
-                  <h4 className="text-base font-bold text-foreground mb-4 flex items-center gap-3">
-                    <span className="flex items-center justify-center w-6 h-6 rounded-md bg-primary text-primary-foreground text-xs font-mono shadow-sm">
-                      {idx + 1}
-                    </span>
-                    {title.replace(/^\d+\.\s*/, '')}
-                  </h4>
+                  <div className="flex items-start justify-between gap-4 mb-4">
+                    <h4 className="text-base font-bold text-foreground flex items-center gap-3 flex-1">
+                      <span className="flex items-center justify-center w-6 h-6 rounded-md bg-primary text-primary-foreground text-xs font-mono shadow-sm flex-shrink-0">
+                        {idx + 1}
+                      </span>
+                      {title.replace(/^\d+\.\s*/, '')}
+                    </h4>
+                    
+                    {publicationNumber && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => toggleImages(idx)}
+                        className="h-8 rounded-lg gap-2 text-xs text-muted-foreground hover:text-primary transition-colors"
+                      >
+                        {expandedImages[idx] ? (
+                          <><ChevronUp className="w-3.5 h-3.5" /> Ocultar Imagens</>
+                        ) : (
+                          <><ImageIcon className="w-3.5 h-3.5" /> Ver Imagens</>
+                        )}
+                      </Button>
+                    )}
+                  </div>
                   
                   <div className="space-y-1.5 font-mono text-[13px] text-muted-foreground ml-2">
                     {details.map((detail, dIdx) => {
@@ -122,6 +153,13 @@ export function RenderReport({ text }: RenderReportProps) {
                       )
                     })}
                   </div>
+
+                  {/* Galeria de Imagens (Expandível) */}
+                  {publicationNumber && expandedImages[idx] && (
+                    <div className="mt-4 pt-4 border-t border-border/50 animate-in fade-in slide-in-from-top-2 duration-300">
+                      <PatentImageGallery publicationNumber={publicationNumber} />
+                    </div>
+                  )}
                 </div>
               </div>
             )

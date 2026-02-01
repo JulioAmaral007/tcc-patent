@@ -172,6 +172,25 @@ export interface ListPatentsResponse {
 }
 
 // ========================================
+// Route: /patents/{publication_number}/images
+// ========================================
+export interface PatentImage {
+  id: number
+  publication_number: string
+  image_path: string
+  image_filename: string
+  image_url: string
+  description: string
+  created_at: string
+}
+
+export interface PatentImagesResponse {
+  publication_number: string
+  images: PatentImage[]
+  total_count: number
+}
+
+// ========================================
 // Shared Slider Configuration
 // ========================================
 export interface SliderConfig {

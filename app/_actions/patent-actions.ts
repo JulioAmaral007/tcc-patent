@@ -13,7 +13,8 @@ import {
   ChunksSimilarityParams,
   ChunksSimilarityResponse,
   ListPatentsParams,
-  ListPatentsResponse
+  ListPatentsResponse,
+  PatentImagesResponse
 } from '@/lib/types'
 
 async function logApiRequest(params: {
@@ -308,6 +309,32 @@ export async function searchPatentsByChunksWithTextAction(params: {
     return chunksResponse
   } catch (error) {
     console.error('[Action] searchPatentsByChunksWithText error:', error)
+    throw error
+  }
+}
+
+export async function getPatentImagesAction(publicationNumber: string): Promise<PatentImagesResponse> {
+  try {
+    const { data } = await externalApiClient.get<PatentImagesResponse>(`/v1/patents/${publicationNumber}/images`)
+    return data
+  } catch (error: any) {
+    console.error(`[Action] getPatentImages error for ${publicationNumber}:`, error.response?.data || error.message)
+    throw error
+  }
+}
+
+export async function getPatentImageBinaryAction(imagePath: string): Promise<string> {
+  try {
+    const { data } = await externalApiClient.get(`/v1/patents/images/${imagePath}`, {
+      responseType: 'arraybuffer'
+    })
+    
+    // Converter o arraybuffer para base64 para retornar ao cliente
+    const base64 = Buffer.from(data).toString('base64')
+    const contentType = 'image/png' // A API converte TIFF para PNG automaticamente
+    return `data:${contentType};base64,${base64}`
+  } catch (error: any) {
+    console.error(`[Action] getPatentImageBinary error for ${imagePath}:`, error.response?.data || error.message)
     throw error
   }
 }
