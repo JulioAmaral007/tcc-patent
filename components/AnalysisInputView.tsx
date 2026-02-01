@@ -10,7 +10,7 @@ import { ImagePreview } from '@/components/ImagePreview'
 import { SearchSettingsModal, type SearchParams } from '@/components/SearchSettingsModal'
 import { ProcessingProgress } from '@/components/ProcessingProgress'
 import { ErrorBox } from '@/components/ErrorBox'
-import type { OCRProgress } from '@/lib/ocr'
+
 
 interface AnalysisInputViewProps {
   activeTab: string
@@ -21,15 +21,12 @@ interface AnalysisInputViewProps {
   selectedFile: File | null
   onFileSelect: (file: File) => void
   onClearFile: () => void
-  onProcessOCR: () => void
-  extractedText: string
   hasContent: boolean
   onClearAll: () => void
   searchParams: SearchParams
   onSearchParamsChange: (params: SearchParams) => void
   onSubmit: () => void
-  ocrProgress: OCRProgress | null
-  processingStage: 'ocr' | 'api' | 'similarity' | null
+  processingStage: 'api' | 'similarity' | null
   error: string | null
   onDismissError: () => void
 }
@@ -43,14 +40,11 @@ export function AnalysisInputView({
   selectedFile,
   onFileSelect,
   onClearFile,
-  onProcessOCR,
-  extractedText,
   hasContent,
   onClearAll,
   searchParams,
   onSearchParamsChange,
   onSubmit,
-  ocrProgress,
   processingStage,
   error,
   onDismissError,
@@ -120,30 +114,7 @@ export function AnalysisInputView({
 
               <ImagePreview file={selectedFile} />
 
-              {selectedFile && !extractedText && (
-                <Button
-                  onClick={onProcessOCR}
-                  disabled={isProcessing}
-                  className="w-full gap-2 gradient-primary rounded-xl h-10 shadow-glow"
-                >
-                  <Sparkles className="w-4 h-4" />
-                  Extract Text (OCR)
-                </Button>
-              )}
 
-              {extractedText && (
-                <div className="p-4 bg-primary/5 border border-primary/20 rounded-xl flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
-                    <Sparkles className="w-4 h-4 text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-primary font-medium">✓ Text extracted successfully</p>
-                    <p className="text-xs text-muted-foreground">
-                      {extractedText.length.toLocaleString()} characters added.
-                    </p>
-                  </div>
-                </div>
-              )}
             </TabsContent>
           </Tabs>
         </div>
@@ -177,7 +148,6 @@ export function AnalysisInputView({
 
         {/* Progress & Error */}
         <ProcessingProgress
-          progress={ocrProgress}
           stage={processingStage}
         />
 

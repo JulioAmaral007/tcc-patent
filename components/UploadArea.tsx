@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { getFileTypeLabel, isValidFileType } from '@/lib/ocr'
+
 import { cn } from '@/lib/utils'
 import { AlertCircle, FileImage, FileText, Upload, X } from 'lucide-react'
 import { useCallback, useState } from 'react'
@@ -31,8 +31,9 @@ export function UploadArea({
 
       const file = acceptedFiles[0]
 
-      if (!isValidFileType(file)) {
-        setError('Unsupported file type. Use PNG, JPG or PDF.')
+      const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp']
+      if (!validTypes.includes(file.type)) {
+        setError('Unsupported file type. Use PNG, JPG or WebP.')
         return
       }
 
@@ -51,7 +52,7 @@ export function UploadArea({
     accept: {
       'image/png': ['.png'],
       'image/jpeg': ['.jpg', '.jpeg'],
-      'application/pdf': ['.pdf'],
+      'image/webp': ['.webp'],
     },
     maxFiles: 1,
     disabled: isProcessing,
@@ -111,7 +112,7 @@ export function UploadArea({
                 JPG
               </span>
               <span className="px-4 py-2 text-xs rounded-full bg-secondary/60 text-secondary-foreground font-semibold border border-border/30">
-                PDF
+                WEBP
               </span>
             </div>
           </div>
@@ -120,18 +121,14 @@ export function UploadArea({
         <Card className="p-4 bg-card/80 rounded-lg border-border/30">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-              {selectedFile.type === 'application/pdf' ? (
-                <FileText className="w-5 h-5 text-primary" />
-              ) : (
                 <FileImage className="w-5 h-5 text-primary" />
-              )}
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-foreground truncate">
                 {selectedFile.name}
               </p>
               <p className="text-xs text-muted-foreground">
-                {getFileTypeLabel(selectedFile)} •{' '}
+                Image •{' '}
                 {formatFileSize(selectedFile.size)}
               </p>
             </div>

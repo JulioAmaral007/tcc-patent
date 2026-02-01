@@ -1,11 +1,11 @@
 import { Card } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
-import type { OCRProgress } from '@/lib/ocr'
+
 import { Loader2, Scan, Search } from 'lucide-react'
 
 interface ProcessingProgressProps {
-  progress: OCRProgress | null
-  stage: 'ocr' | 'api' | 'similarity' | null
+  progress?: { status?: string; progress?: number } | null
+  stage: 'api' | 'similarity' | null
 }
 
 export function ProcessingProgress({
@@ -15,14 +15,7 @@ export function ProcessingProgress({
   if (!stage) return null
 
   const getStageInfo = () => {
-    if (stage === 'ocr') {
-      return {
-        title: 'Extracting text (OCR)',
-        description: progress?.status || 'Processing...',
-        progress: Math.round((progress?.progress || 0) * 100),
-        icon: Scan,
-      }
-    }
+
     if (stage === 'similarity') {
       return {
         title: 'Searching similar patents',
