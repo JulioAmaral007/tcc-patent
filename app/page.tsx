@@ -7,7 +7,6 @@ import { supabase } from '@/lib/supabase'
 import { cn } from '@/lib/utils'
 
 import { AnalysisInputView } from '@/components/AnalysisInputView'
-import { AnalysisResultView } from '@/components/AnalysisResultView'
 import { Footer } from '@/components/Footer'
 import { Header } from '@/components/Header'
 import { HistorySidebar } from '@/components/HistorySidebar'
@@ -127,14 +126,12 @@ export default function Home() {
   })
 
   // Results & UI State
-  const [result, setResult] = useState<string | null>(null)
   const [currentConversationId, setCurrentConversationId] = useState<string | undefined>(undefined)
   const [isProcessing, setIsProcessing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [processingStage, setProcessingStage] = useState<'api' | 'similarity' | null>(null)
 
   // Derived State
-  const hasResult = useMemo(() => result !== null, [result])
   const hasContent = useMemo(() => textInput.trim().length > 0 || selectedFile !== null, [textInput, selectedFile])
 
   // --- Handlers ---
@@ -161,65 +158,14 @@ export default function Home() {
   const handleClearAll = useCallback(() => {
     setTextInput('')
     setSelectedFile(null)
-    setResult(null)
     setCurrentConversationId(undefined)
     setError(null)
     setProcessingStage(null)
   }, [])
 
   const handleSelectAnalysis = useCallback(async (analysis: AnalysisHistory) => {
-    setTextInput(analysis.inputText)
-    setSelectedFile(null)
-    setCurrentConversationId(analysis.conversation_id)
-    
-    // Se tiver payload de requisição e for uma busca do banco, "refaz" a requisição para atualizar o estado
-    if (analysis.request_payload && analysis.endpoint) {
-      setIsProcessing(true)
-      try {
-        let formattedResult = ''
-        if (analysis.endpoint.includes('/search/by-text')) {
-          const response = await searchPatentsByTextAction({
-            ...analysis.request_payload,
-            conversation_id: analysis.conversation_id
-          })
-          formattedResult = formatSimilarityResults(response)
-        } else if (analysis.endpoint.includes('/patents/similarity')) {
-          const response = await searchSimilarPatentsWithTextAction({
-            ...analysis.request_payload,
-            conversation_id: analysis.conversation_id
-          })
-          formattedResult = formatSimilarityResults(response)
-        } else if (analysis.endpoint.includes('/chunks/similarity')) {
-          const response = await searchPatentsByChunksWithTextAction({
-            ...analysis.request_payload,
-            conversation_id: analysis.conversation_id
-          })
-          formattedResult = formatChunksSimilarityResults(response)
-        } else if (analysis.endpoint.includes('/images/search')) {
-          // Para imagens, geralmente precisamos do arquivo original. 
-          // Como não temos o binário aqui, mantemos o resultado salvo.
-          formattedResult = analysis.result
-        }
-        
-        if (formattedResult) {
-          setResult(formattedResult)
-        } else {
-          setResult(analysis.result)
-        }
-      } catch (err) {
-        console.error("Error re-running search from history:", err)
-        setResult(analysis.result) // Fallback
-      } finally {
-        setIsProcessing(false)
-      }
-    } else {
-      setResult(analysis.result)
-    }
-
-    toast.success('Analysis loaded', {
-      description: 'The analysis and chat history were restored.',
-    })
-  }, [])
+    router.push(`/result/${analysis.id}`)
+  }, [router])
 
 
 
@@ -275,9 +221,6 @@ export default function Home() {
            totalFound = response.total_found
         }
       }
-
-      setResult(formattedResult)
-      
       const endpoint = searchType === 'direct_text' 
         ? '/v1/patents/search/by-text' 
         : (searchType === 'chunks_processing' ? '/v1/patents/chunks/similarity' : '/v1/patents/similarity')
@@ -286,7 +229,7 @@ export default function Home() {
         ? { text: textInput, similarity_threshold, max_results, use_chunks: false } 
         : { text: textInput, max_results, similarity_threshold }
 
-      await saveAnalysisToHistory(textInput, formattedResult, 'text', undefined, {
+      const savedAnalysis = await saveAnalysisToHistory(textInput, formattedResult, 'text', undefined, {
         conversation_id: conversationId,
         endpoint,
         request_payload
@@ -295,6 +238,8 @@ export default function Home() {
       toast.success('Search complete!', {
         description: `Found ${totalFound} relevant results.`,
       })
+
+      return savedAnalysis
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Search error.'
       setError(msg)
@@ -324,9 +269,8 @@ export default function Home() {
     )
 
     const formattedResult = formatImageSimilarityResults(response)
-    setResult(formattedResult)
     
-    await saveAnalysisToHistory(`Image search: ${selectedFile.name}`, formattedResult, 'image', selectedFile.name, {
+    const savedAnalysis = await saveAnalysisToHistory(`Image search: ${selectedFile.name}`, formattedResult, 'image', selectedFile.name, {
       conversation_id: conversationId,
       endpoint: '/v1/patents/images/search',
       request_payload: { 
@@ -339,6 +283,8 @@ export default function Home() {
     toast.success('Search complete!', {
       description: `Found ${response.total_found} similar images.`,
     })
+
+    return savedAnalysis
   }, [selectedFile, searchParams.similarity_threshold, searchParams.max_results, currentConversationId])
 
   const handleSubmit = useCallback(async () => {
@@ -357,10 +303,15 @@ export default function Home() {
     setError(null)
 
     try {
+      let savedAnalysis;
       if (activeTab === 'text') {
-        await handleTextSearch()
+        savedAnalysis = await handleTextSearch()
       } else {
-        await handleImageSearch()
+        savedAnalysis = await handleImageSearch()
+      }
+
+      if (savedAnalysis) {
+        router.push(`/result/${savedAnalysis.id}`)
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Error processing.'
@@ -370,7 +321,7 @@ export default function Home() {
       setIsProcessing(false)
       setProcessingStage(null)
     }
-  }, [activeTab, textInput, selectedFile, searchParams, handleTextSearch, handleImageSearch])
+  }, [activeTab, textInput, selectedFile, searchParams, handleTextSearch, handleImageSearch, router])
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -411,34 +362,24 @@ export default function Home() {
           />
         </div>
 
-        {hasResult && result ? (
-          <AnalysisResultView
-            result={result}
-            onNewAnalysis={() => {
-              setResult(null)
-            }}
-            conversationId={currentConversationId}
-          />
-        ) : (
-          <AnalysisInputView
-            activeTab={activeTab}
-            onTabChange={handleTabChange}
-            textInput={textInput}
-            onTextInputChange={setTextInput}
-            isProcessing={isProcessing}
-            selectedFile={selectedFile}
-            onFileSelect={handleFileSelect}
-            onClearFile={handleClearFile}
-            hasContent={hasContent}
-            onClearAll={handleClearAll}
-            searchParams={searchParams}
-            onSearchParamsChange={setSearchParams}
-            onSubmit={handleSubmit}
-            processingStage={processingStage}
-            error={error}
-            onDismissError={() => setError(null)}
-          />
-        )}
+        <AnalysisInputView
+          activeTab={activeTab}
+          onTabChange={handleTabChange}
+          textInput={textInput}
+          onTextInputChange={setTextInput}
+          isProcessing={isProcessing}
+          selectedFile={selectedFile}
+          onFileSelect={handleFileSelect}
+          onClearFile={handleClearFile}
+          hasContent={hasContent}
+          onClearAll={handleClearAll}
+          searchParams={searchParams}
+          onSearchParamsChange={setSearchParams}
+          onSubmit={handleSubmit}
+          processingStage={processingStage}
+          error={error}
+          onDismissError={() => setError(null)}
+        />
       </main>
       
       <Footer />
