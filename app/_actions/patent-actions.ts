@@ -2,9 +2,9 @@
 
 import { createClient } from '@/lib/supabase-server'
 import { externalApiClient } from '@/lib/patent-api-utils'
-import { 
-  SearchByTextParams, 
-  SearchByTextResponse, 
+import {
+  SearchByTextParams,
+  SearchByTextResponse,
   ImagesSearchResponse,
   EmbedParams,
   EmbedResponse,
@@ -14,7 +14,7 @@ import {
   ChunksSimilarityResponse,
   ListPatentsParams,
   ListPatentsResponse,
-  PatentImagesResponse
+  PatentImagesResponse,
 } from '@/lib/types'
 
 async function logApiRequest(params: {
@@ -30,16 +30,25 @@ async function logApiRequest(params: {
   conversation_id?: string
 }) {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   if (!user) return
 
   // Garantir que a conversa existe se um ID foi fornecido (evita erro de FK)
   if (params.conversation_id) {
-    await supabase.from('conversations').upsert({
-      id: params.conversation_id,
-      user_id: user.id,
-      title: `Analysis: ${params.endpoint.split('/').pop() || 'Search'}`
-    }, { onConflict: 'id' }).select().single()
+    await supabase
+      .from('conversations')
+      .upsert(
+        {
+          id: params.conversation_id,
+          user_id: user.id,
+          title: `Analysis: ${params.endpoint.split('/').pop() || 'Search'}`,
+        },
+        { onConflict: 'id' },
+      )
+      .select()
+      .single()
   }
 
   await supabase.from('api_request_history').insert({
@@ -53,14 +62,16 @@ async function logApiRequest(params: {
     response_payload: params.response_payload,
     latency_ms: params.latency_ms,
     status: params.status,
-    error_message: params.error_message
+    error_message: params.error_message,
   })
 }
 
-export async function generateEmbeddingsAction(params: EmbedParams): Promise<EmbedResponse> {
+export async function generateEmbeddingsAction(
+  params: EmbedParams,
+): Promise<EmbedResponse> {
   try {
     const { data } = await externalApiClient.post<EmbedResponse>('/v1/embed/', {
-      text: params.text
+      text: params.text,
     })
     return data
   } catch (error: any) {
@@ -68,7 +79,7 @@ export async function generateEmbeddingsAction(params: EmbedParams): Promise<Emb
       console.error('[Action] generateEmbeddings API error:', {
         status: error.response.status,
         data: error.response.data,
-        payload: { text: params.text?.substring(0, 50) + '...' }
+        payload: { text: params.text?.substring(0, 50) + '...' },
       })
     } else {
       console.error('[Action] generateEmbeddings error:', error.message)
@@ -77,14 +88,19 @@ export async function generateEmbeddingsAction(params: EmbedParams): Promise<Emb
   }
 }
 
-export async function searchPatentsByTextAction(params: SearchByTextParams): Promise<SearchByTextResponse> {
+export async function searchPatentsByTextAction(
+  params: SearchByTextParams,
+): Promise<SearchByTextResponse> {
   const start = Date.now()
-  try { 
-    // Removemos o conversation_id do body antes de enviar para a API externa 
+  try {
+    // Removemos o conversation_id do body antes de enviar para a API externa
     // para evitar erro 422 se a API não esperar esse campo extra
     const { conversation_id, ...apiParams } = params
-    const { data } = await externalApiClient.post<SearchByTextResponse>('/v1/patents/search/by-text', apiParams)
-    
+    const { data } = await externalApiClient.post<SearchByTextResponse>(
+      '/v1/patents/search/by-text',
+      apiParams,
+    )
+
     await logApiRequest({
       endpoint: '/v1/patents/search/by-text',
       similarity_threshold: params.similarity_threshold,
@@ -94,12 +110,15 @@ export async function searchPatentsByTextAction(params: SearchByTextParams): Pro
       response_payload: data,
       latency_ms: Date.now() - start,
       status: 'success',
-      conversation_id: params.conversation_id
+      conversation_id: params.conversation_id,
     })
 
     return data
   } catch (error: any) {
-    console.error('[Action] searchPatentsByText error:', error.response?.data || error.message)
+    console.error(
+      '[Action] searchPatentsByText error:',
+      error.response?.data || error.message,
+    )
     await logApiRequest({
       endpoint: '/v1/patents/search/by-text',
       similarity_threshold: params.similarity_threshold,
@@ -110,18 +129,18 @@ export async function searchPatentsByTextAction(params: SearchByTextParams): Pro
       latency_ms: Date.now() - start,
       status: 'error',
       error_message: error.message,
-      conversation_id: params.conversation_id
+      conversation_id: params.conversation_id,
     })
     throw error
   }
 }
 
 export async function searchSimilarImagesAction(
-  imageData: ArrayBuffer, 
-  filename: string, 
-  similarity_threshold: number, 
+  imageData: ArrayBuffer,
+  filename: string,
+  similarity_threshold: number,
   max_results: number,
-  conversation_id?: string
+  conversation_id?: string,
 ): Promise<ImagesSearchResponse> {
   const start = Date.now()
   const formData = new FormData()
@@ -136,8 +155,8 @@ export async function searchSimilarImagesAction(
         params: {
           similarity_threshold,
           max_results,
-        }
-      }
+        },
+      },
     )
 
     await logApiRequest({
@@ -149,12 +168,15 @@ export async function searchSimilarImagesAction(
       response_payload: data,
       latency_ms: Date.now() - start,
       status: 'success',
-      conversation_id: conversation_id
+      conversation_id: conversation_id,
     })
 
     return data
   } catch (error: any) {
-    console.error('[Action] searchSimilarImages error:', error.response?.data || error.message)
+    console.error(
+      '[Action] searchSimilarImages error:',
+      error.response?.data || error.message,
+    )
     await logApiRequest({
       endpoint: '/v1/patents/images/search',
       similarity_threshold,
@@ -165,18 +187,23 @@ export async function searchSimilarImagesAction(
       latency_ms: Date.now() - start,
       status: 'error',
       error_message: error.message,
-      conversation_id: conversation_id
+      conversation_id: conversation_id,
     })
     throw error
   }
 }
 
-export async function searchSimilarPatentsAction(params: PatentsSimilarityParams): Promise<PatentsSimilarityResponse> {
+export async function searchSimilarPatentsAction(
+  params: PatentsSimilarityParams,
+): Promise<PatentsSimilarityResponse> {
   const start = Date.now()
   try {
     const { conversation_id, text, ...apiParams } = params
-    const { data } = await externalApiClient.post<PatentsSimilarityResponse>('/v1/patents/similarity', apiParams)
-    
+    const { data } = await externalApiClient.post<PatentsSimilarityResponse>(
+      '/v1/patents/similarity',
+      apiParams,
+    )
+
     await logApiRequest({
       endpoint: '/v1/patents/similarity',
       similarity_threshold: params.similarity_threshold,
@@ -186,12 +213,15 @@ export async function searchSimilarPatentsAction(params: PatentsSimilarityParams
       response_payload: data,
       latency_ms: Date.now() - start,
       status: 'success',
-      conversation_id: params.conversation_id
+      conversation_id: params.conversation_id,
     })
 
     return data
   } catch (error: any) {
-    console.error('[Action] searchSimilarPatents error:', error.response?.data || error.message)
+    console.error(
+      '[Action] searchSimilarPatents error:',
+      error.response?.data || error.message,
+    )
     await logApiRequest({
       endpoint: '/v1/patents/similarity',
       similarity_threshold: params.similarity_threshold,
@@ -202,18 +232,23 @@ export async function searchSimilarPatentsAction(params: PatentsSimilarityParams
       latency_ms: Date.now() - start,
       status: 'error',
       error_message: error.message,
-      conversation_id: params.conversation_id
+      conversation_id: params.conversation_id,
     })
     throw error
   }
 }
 
-export async function searchPatentsByChunksAction(params: ChunksSimilarityParams): Promise<ChunksSimilarityResponse> {
+export async function searchPatentsByChunksAction(
+  params: ChunksSimilarityParams,
+): Promise<ChunksSimilarityResponse> {
   const start = Date.now()
   try {
     const { conversation_id, text, ...apiParams } = params
-    const { data } = await externalApiClient.post<ChunksSimilarityResponse>('/v1/patents/chunks/similarity', apiParams)
-    
+    const { data } = await externalApiClient.post<ChunksSimilarityResponse>(
+      '/v1/patents/chunks/similarity',
+      apiParams,
+    )
+
     await logApiRequest({
       endpoint: '/v1/patents/chunks/similarity',
       similarity_threshold: params.similarity_threshold,
@@ -223,12 +258,15 @@ export async function searchPatentsByChunksAction(params: ChunksSimilarityParams
       response_payload: data,
       latency_ms: Date.now() - start,
       status: 'success',
-      conversation_id: params.conversation_id
+      conversation_id: params.conversation_id,
     })
 
     return data
   } catch (error: any) {
-    console.error('[Action] searchPatentsByChunks error:', error.response?.data || error.message)
+    console.error(
+      '[Action] searchPatentsByChunks error:',
+      error.response?.data || error.message,
+    )
     await logApiRequest({
       endpoint: '/v1/patents/chunks/similarity',
       similarity_threshold: params.similarity_threshold,
@@ -239,20 +277,28 @@ export async function searchPatentsByChunksAction(params: ChunksSimilarityParams
       latency_ms: Date.now() - start,
       status: 'error',
       error_message: error.message,
-      conversation_id: params.conversation_id
+      conversation_id: params.conversation_id,
     })
     throw error
   }
 }
 
-export async function listPatentsAction(params: ListPatentsParams): Promise<ListPatentsResponse> {
+export async function listPatentsAction(
+  params: ListPatentsParams,
+): Promise<ListPatentsResponse> {
   try {
-    const { data } = await externalApiClient.get<ListPatentsResponse>('/v1/patents/', {
-      params
-    })
+    const { data } = await externalApiClient.get<ListPatentsResponse>(
+      '/v1/patents/',
+      {
+        params,
+      },
+    )
     return data
   } catch (error: any) {
-    console.error('[Action] listPatents error:', error.response?.data || error.message)
+    console.error(
+      '[Action] listPatents error:',
+      error.response?.data || error.message,
+    )
     throw error
   }
 }
@@ -265,7 +311,7 @@ export async function searchSimilarPatentsWithTextAction(params: {
 }): Promise<PatentsSimilarityResponse> {
   try {
     const embedData = await generateEmbeddingsAction({ text: params.text })
-    
+
     if (!embedData.embeddings || embedData.embeddings.length === 0) {
       throw new Error('Failed to generate embeddings: No embedding returned.')
     }
@@ -275,7 +321,7 @@ export async function searchSimilarPatentsWithTextAction(params: {
       max_results: params.max_results,
       similarity_threshold: params.similarity_threshold,
       conversation_id: params.conversation_id,
-      text: params.text
+      text: params.text,
     })
 
     return similarityResponse
@@ -293,7 +339,7 @@ export async function searchPatentsByChunksWithTextAction(params: {
 }): Promise<ChunksSimilarityResponse> {
   try {
     const embedData = await generateEmbeddingsAction({ text: params.text })
-    
+
     if (!embedData.embeddings || embedData.embeddings.length === 0) {
       throw new Error('Failed to generate embeddings: No embedding returned.')
     }
@@ -303,7 +349,7 @@ export async function searchPatentsByChunksWithTextAction(params: {
       max_results: params.max_results,
       similarity_threshold: params.similarity_threshold,
       conversation_id: params.conversation_id,
-      text: params.text
+      text: params.text,
     })
 
     return chunksResponse
@@ -313,28 +359,43 @@ export async function searchPatentsByChunksWithTextAction(params: {
   }
 }
 
-export async function getPatentImagesAction(publicationNumber: string): Promise<PatentImagesResponse> {
+export async function getPatentImagesAction(
+  publicationNumber: string,
+): Promise<PatentImagesResponse> {
   try {
-    const { data } = await externalApiClient.get<PatentImagesResponse>(`/v1/patents/${publicationNumber}/images`)
+    const { data } = await externalApiClient.get<PatentImagesResponse>(
+      `/v1/patents/${publicationNumber}/images`,
+    )
     return data
   } catch (error: any) {
-    console.error(`[Action] getPatentImages error for ${publicationNumber}:`, error.response?.data || error.message)
+    console.error(
+      `[Action] getPatentImages error for ${publicationNumber}:`,
+      error.response?.data || error.message,
+    )
     throw error
   }
 }
 
-export async function getPatentImageBinaryAction(imagePath: string): Promise<string> {
+export async function getPatentImageBinaryAction(
+  imagePath: string,
+): Promise<string> {
   try {
-    const { data } = await externalApiClient.get(`/v1/patents/images/${imagePath}`, {
-      responseType: 'arraybuffer'
-    })
-    
+    const { data } = await externalApiClient.get(
+      `/v1/patents/images/${imagePath}`,
+      {
+        responseType: 'arraybuffer',
+      },
+    )
+
     // Converter o arraybuffer para base64 para retornar ao cliente
     const base64 = Buffer.from(data).toString('base64')
     const contentType = 'image/png' // A API converte TIFF para PNG automaticamente
     return `data:${contentType};base64,${base64}`
   } catch (error: any) {
-    console.error(`[Action] getPatentImageBinary error for ${imagePath}:`, error.response?.data || error.message)
+    console.error(
+      `[Action] getPatentImageBinary error for ${imagePath}:`,
+      error.response?.data || error.message,
+    )
     throw error
   }
 }
