@@ -1,124 +1,41 @@
 'use client'
 
-import { useCallback, useState, useMemo, useEffect, Suspense } from 'react'
+import { useCallback, useState, useMemo } from 'react'
 import { toast } from 'sonner'
-import { useSearchParams, useRouter } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { cn } from '@/lib/utils'
 
 import { AnalysisInputView } from '@/components/AnalysisInputView'
-import { Footer } from '@/components/Footer'
-import { Header } from '@/components/Header'
-import { HistorySidebar } from '@/components/HistorySidebar'
-import { defaultSearchParams, type SearchParams } from '@/components/SearchSettingsModal'
+import { AppLayout } from '@/components/layout'
+import {
+  defaultSearchParams,
+  type SearchParams,
+} from '@/components/SearchSettingsModal'
 
-import { 
-  formatSimilarityResults, 
+import {
+  formatSimilarityResults,
   formatImageSimilarityResults,
   formatChunksSimilarityResults,
-  performImageSearch
-} from '@/lib/api'
+} from '@/lib/formatters'
 
-import { 
-  generateEmbeddingsAction,
-  searchSimilarPatentsAction,
-  searchPatentsByChunksAction,
+import {
   searchPatentsByTextAction,
   searchPatentsByChunksWithTextAction,
   searchSimilarPatentsWithTextAction,
-  searchSimilarImagesAction
+  searchSimilarImagesAction,
 } from '@/app/_actions/patent-actions'
 
-import {
-  saveAnalysisToHistory,
-  type AnalysisHistory,
-} from '@/lib/history'
+import type { AnalysisResultData } from '@/lib/types'
+import { saveAnalysisToHistory } from '@/lib/history'
 
 type TabType = 'text' | 'image'
 
-import { Sidebar } from '@/components/Sidebar'
-
-function SearchParamsHandler() {
-  const searchParams = useSearchParams()
-
-  useEffect(() => {
-    const errorParam = searchParams.get('error')
-    if (errorParam === 'auth_failed') {
-      toast.error('Authentication failed', {
-        description: 'Could not complete sign in with Google. Check the server console.'
-      })
-    }
-
-    // Processa tokens de autenticação do fragmento da URL
-    const processAuthTokens = async () => {
-      console.log('🔍 [DEBUG] URL Hash:', window.location.hash)
-      
-      if (typeof window !== 'undefined' && window.location.hash) {
-        const hashParams = new URLSearchParams(window.location.hash.substring(1))
-        const accessToken = hashParams.get('access_token')
-        const refreshToken = hashParams.get('refresh_token')
-        const expiresIn = hashParams.get('expires_in')
-        
-        console.log('🔍 [DEBUG] Access Token presente?', !!accessToken)
-        console.log('🔍 [DEBUG] Refresh Token presente?', !!refreshToken)
-        
-        if (accessToken && refreshToken) {
-          console.log('✅ [DEBUG] Tokens detectados! Criando sessão...')
-          
-          try {
-            // Define a sessão manualmente usando a API do Supabase
-            const { data, error } = await supabase.auth.setSession({
-              access_token: accessToken,
-              refresh_token: refreshToken
-            })
-            
-            if (error) {
-              console.error('❌ [DEBUG] Erro ao definir sessão:', error)
-              toast.error('Error processing login')
-            } else {
-              console.log('✅ [DEBUG] Sessão criada com sucesso!', data.user?.email)
-              toast.success('Login successful!')
-            }
-          } catch (err) {
-            console.error('❌ [DEBUG] Exceção ao definir sessão:', err)
-          }
-          
-          // Limpa o hash da URL
-          window.history.replaceState(null, '', window.location.pathname + window.location.search)
-        }
-      }
-    }
-
-    processAuthTokens()
-  }, [searchParams])
-
-  return null
-}
-
 export default function Home() {
-  // Sidebar State
-  const [sidebarTab, setSidebarTab] = useState('main')
-  const [isHistoryOpen, setIsHistoryOpen] = useState(false)
   const router = useRouter()
-
-  const handleSidebarTabChange = (tab: string) => {
-    if (tab === 'history') {
-      const nextState = !isHistoryOpen
-      setIsHistoryOpen(nextState)
-      setSidebarTab(nextState ? 'history' : 'main')
-    } else if (tab === 'patents') {
-      router.push('/patents')
-    } else {
-      setSidebarTab(tab)
-      setIsHistoryOpen(false)
-    }
-  }
-
   const [activeTab, setActiveTab] = useState<TabType>('text')
   const [textInput, setTextInput] = useState('')
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
 
-  
   // Search Settings State
   const [searchParams, setSearchParams] = useState<SearchParams>({
     ...defaultSearchParams,
@@ -126,20 +43,29 @@ export default function Home() {
   })
 
   // Results & UI State
-  const [currentConversationId, setCurrentConversationId] = useState<string | undefined>(undefined)
+  const [currentConversationId, setCurrentConversationId] = useState<
+    string | undefined
+  >(undefined)
   const [isProcessing, setIsProcessing] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [processingStage, setProcessingStage] = useState<'api' | 'similarity' | null>(null)
+  const [processingStage, setProcessingStage] = useState<
+    'api' | 'similarity' | null
+  >(null)
 
   // Derived State
-  const hasContent = useMemo(() => textInput.trim().length > 0 || selectedFile !== null, [textInput, selectedFile])
+  const hasContent = useMemo(
+    () => textInput.trim().length > 0 || selectedFile !== null,
+    [textInput, selectedFile],
+  )
 
   // --- Handlers ---
 
   const handleTabChange = useCallback((newTab: string) => {
-    const tab = newTab as TabType
+    const tab = (
+      newTab === 'text' || newTab === 'image' ? newTab : 'text'
+    ) as TabType
     setActiveTab(tab)
-    setSearchParams(prev => ({
+    setSearchParams((prev) => ({
       ...prev,
       searchType: tab === 'text' ? 'similarity_full' : 'image_search',
     }))
@@ -163,12 +89,6 @@ export default function Home() {
     setProcessingStage(null)
   }, [])
 
-  const handleSelectAnalysis = useCallback(async (analysis: AnalysisHistory) => {
-    router.push(`/result/${analysis.id}`)
-  }, [router])
-
-
-
   // --- Search Logic ---
 
   const handleTextSearch = useCallback(async () => {
@@ -182,6 +102,7 @@ export default function Home() {
 
     let formattedResult = ''
     let totalFound = 0
+    let responsePayload: AnalysisResultData | undefined
 
     const { searchType, similarity_threshold, max_results } = searchParams
 
@@ -193,48 +114,69 @@ export default function Home() {
           similarity_threshold,
           max_results,
           use_chunks: false,
-          conversation_id: conversationId
+          conversation_id: conversationId,
         })
+        responsePayload = response
         formattedResult = formatSimilarityResults(response)
         totalFound = response.total_found
-      } 
-      else if (searchType === 'similarity_full' || searchType === 'chunks_processing') {
-        setProcessingStage('api') 
-        
+      } else if (
+        searchType === 'similarity_full' ||
+        searchType === 'chunks_processing'
+      ) {
+        setProcessingStage('api')
         if (searchType === 'chunks_processing') {
-           const response = await searchPatentsByChunksWithTextAction({
-             text: textInput,
-             max_results,
-             similarity_threshold,
-             conversation_id: conversationId
-           })
-           formattedResult = formatChunksSimilarityResults(response)
-           totalFound = response.total_found
+          const response = await searchPatentsByChunksWithTextAction({
+            text: textInput,
+            max_results,
+            similarity_threshold,
+            conversation_id: conversationId,
+          })
+          responsePayload = response
+          formattedResult = formatChunksSimilarityResults(response)
+          totalFound = response.total_found
         } else {
-           const response = await searchSimilarPatentsWithTextAction({
-             text: textInput,
-             max_results,
-             similarity_threshold,
-             conversation_id: conversationId
-           })
-           formattedResult = formatSimilarityResults(response)
-           totalFound = response.total_found
+          const response = await searchSimilarPatentsWithTextAction({
+            text: textInput,
+            max_results,
+            similarity_threshold,
+            conversation_id: conversationId,
+          })
+          responsePayload = response
+          formattedResult = formatSimilarityResults(response)
+          totalFound = response.total_found
         }
       }
-      const endpoint = searchType === 'direct_text' 
-        ? '/v1/patents/search/by-text' 
-        : (searchType === 'chunks_processing' ? '/v1/patents/chunks/similarity' : '/v1/patents/similarity')
-      
-      const request_payload = searchType === 'direct_text' 
-        ? { text: textInput, similarity_threshold, max_results, use_chunks: false } 
-        : { text: textInput, max_results, similarity_threshold }
 
-      const savedAnalysis = await saveAnalysisToHistory(textInput, formattedResult, 'text', undefined, {
-        conversation_id: conversationId,
-        endpoint,
-        request_payload
-      })
-      
+      const endpoint =
+        searchType === 'direct_text'
+          ? '/v1/patents/search/by-text'
+          : searchType === 'chunks_processing'
+            ? '/v1/patents/chunks/similarity'
+            : '/v1/patents/similarity'
+
+      const request_payload =
+        searchType === 'direct_text'
+          ? {
+              text: textInput,
+              similarity_threshold,
+              max_results,
+              use_chunks: false,
+            }
+          : { text: textInput, max_results, similarity_threshold }
+
+      const savedAnalysis = await saveAnalysisToHistory(
+        textInput,
+        formattedResult,
+        'text',
+        undefined,
+        {
+          conversation_id: conversationId,
+          endpoint,
+          request_payload,
+          response_payload: responsePayload,
+        },
+      )
+
       toast.success('Search complete!', {
         description: `Found ${totalFound} relevant results.`,
       })
@@ -244,7 +186,7 @@ export default function Home() {
       const msg = err instanceof Error ? err.message : 'Search error.'
       setError(msg)
       toast.error('Operation Error', { description: msg })
-      throw err 
+      throw err
     }
   }, [textInput, searchParams, currentConversationId])
 
@@ -258,42 +200,57 @@ export default function Home() {
     setCurrentConversationId(conversationId)
 
     setProcessingStage('similarity')
-    
+
     const arrayBuffer = await selectedFile.arrayBuffer()
     const response = await searchSimilarImagesAction(
       arrayBuffer,
       selectedFile.name,
       searchParams.similarity_threshold,
       searchParams.max_results,
-      conversationId
+      conversationId,
     )
 
     const formattedResult = formatImageSimilarityResults(response)
-    
-    const savedAnalysis = await saveAnalysisToHistory(`Image search: ${selectedFile.name}`, formattedResult, 'image', selectedFile.name, {
-      conversation_id: conversationId,
-      endpoint: '/v1/patents/images/search',
-      request_payload: { 
-        filename: selectedFile.name, 
-        similarity_threshold: searchParams.similarity_threshold, 
-        max_results: searchParams.max_results 
-      }
-    })
+
+    const savedAnalysis = await saveAnalysisToHistory(
+      `Image search: ${selectedFile.name}`,
+      formattedResult,
+      'image',
+      selectedFile.name,
+      {
+        conversation_id: conversationId,
+        endpoint: '/v1/patents/images/search',
+        request_payload: {
+          filename: selectedFile.name,
+          similarity_threshold: searchParams.similarity_threshold,
+          max_results: searchParams.max_results,
+        },
+        response_payload: response,
+      },
+    )
 
     toast.success('Search complete!', {
       description: `Found ${response.total_found} similar images.`,
     })
 
     return savedAnalysis
-  }, [selectedFile, searchParams.similarity_threshold, searchParams.max_results, currentConversationId])
+  }, [
+    selectedFile,
+    searchParams.similarity_threshold,
+    searchParams.max_results,
+    currentConversationId,
+  ])
 
   const handleSubmit = useCallback(async () => {
     // Verifica se o usuário está autenticado
-    const { data: { session } } = await supabase.auth.getSession()
-    
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
+
     if (!session) {
       toast.error('Authentication required', {
-        description: 'You need to sign in with Google to perform patent searches.',
+        description:
+          'You need to sign in with Google to perform patent searches.',
         duration: 5000,
       })
       return
@@ -303,7 +260,7 @@ export default function Home() {
     setError(null)
 
     try {
-      let savedAnalysis;
+      let savedAnalysis
       if (activeTab === 'text') {
         savedAnalysis = await handleTextSearch()
       } else {
@@ -321,68 +278,28 @@ export default function Home() {
       setIsProcessing(false)
       setProcessingStage(null)
     }
-  }, [activeTab, textInput, selectedFile, searchParams, handleTextSearch, handleImageSearch, router])
+  }, [activeTab, handleTextSearch, handleImageSearch, router])
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <Suspense fallback={null}>
-        <SearchParamsHandler />
-      </Suspense>
-      <Sidebar activeTab={sidebarTab} onTabChange={handleSidebarTabChange} />
-      <Header />
-
-      <main className="pt-16 pb-16 md:pb-0 md:pl-16 min-h-screen flex relative">
-        {/* Overlay para fechar o histórico ao clicar fora */}
-        <div 
-          className={cn(
-            "absolute inset-0 bg-background/20 backdrop-blur-sm z-10 transition-all duration-300",
-            isHistoryOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
-          )} 
-          onClick={() => {
-            setIsHistoryOpen(false)
-            setSidebarTab('main')
-          }}
-        />
-
-        {/* Histórico como Painel Lateral (Sempre no DOM para animação suave) */}
-        <div className={cn(
-          "absolute inset-y-0 left-0 md:left-16 w-full sm:w-80 z-20 transition-all duration-300 ease-in-out border-r border-border shadow-2xl overflow-hidden bg-background",
-          isHistoryOpen ? "translate-x-0 opacity-100 visibility-visible" : "-translate-x-full opacity-0 visibility-hidden"
-        )}>
-          <HistorySidebar 
-            onClose={() => {
-              setIsHistoryOpen(false)
-              setSidebarTab('main')
-            }}
-            onSelectAnalysis={(analysis) => {
-              handleSelectAnalysis(analysis)
-              setIsHistoryOpen(false)
-              setSidebarTab('main')
-            }} 
-          />
-        </div>
-
-        <AnalysisInputView
-          activeTab={activeTab}
-          onTabChange={handleTabChange}
-          textInput={textInput}
-          onTextInputChange={setTextInput}
-          isProcessing={isProcessing}
-          selectedFile={selectedFile}
-          onFileSelect={handleFileSelect}
-          onClearFile={handleClearFile}
-          hasContent={hasContent}
-          onClearAll={handleClearAll}
-          searchParams={searchParams}
-          onSearchParamsChange={setSearchParams}
-          onSubmit={handleSubmit}
-          processingStage={processingStage}
-          error={error}
-          onDismissError={() => setError(null)}
-        />
-      </main>
-      
-      <Footer />
-    </div>
+    <AppLayout activePage="main">
+      <AnalysisInputView
+        activeTab={activeTab}
+        onTabChange={handleTabChange}
+        textInput={textInput}
+        onTextInputChange={setTextInput}
+        isProcessing={isProcessing}
+        selectedFile={selectedFile}
+        onFileSelect={handleFileSelect}
+        onClearFile={handleClearFile}
+        hasContent={hasContent}
+        onClearAll={handleClearAll}
+        searchParams={searchParams}
+        onSearchParamsChange={setSearchParams}
+        onSubmit={handleSubmit}
+        processingStage={processingStage}
+        error={error}
+        onDismissError={() => setError(null)}
+      />
+    </AppLayout>
   )
 }
