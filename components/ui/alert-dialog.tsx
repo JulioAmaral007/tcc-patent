@@ -5,7 +5,6 @@ import { X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 
-
 interface AlertDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -72,4 +71,3 @@ export function AlertDialog({
     </div>
   )
 }
-

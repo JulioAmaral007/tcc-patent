@@ -20,11 +20,22 @@ import {
 } from '@/components/ui/select'
 import { ParameterSlider } from '@/components/ParameterSlider'
 import { SLIDER_CONFIGS, API_DEFAULTS } from '@/lib/types'
-import { Switch } from '@/components/ui/switch'
-import { Label } from '@/components/ui/label'
-import { Settings2, RotateCcw, Layers, Image as ImageIcon, FileText, Zap, Check, Sparkles, Search } from 'lucide-react'
+import {
+  Settings2,
+  RotateCcw,
+  Layers,
+  Image as ImageIcon,
+  FileText,
+  Zap,
+  Check,
+  Search,
+} from 'lucide-react'
 
-export type SearchType = 'similarity_full' | 'direct_text' | 'chunks_processing' | 'image_search'
+export type SearchType =
+  | 'similarity_full'
+  | 'direct_text'
+  | 'chunks_processing'
+  | 'image_search'
 
 export interface SearchParams {
   similarity_threshold: number
@@ -81,25 +92,47 @@ export function SearchSettingsModal({
         [key]: value,
       }))
     },
-    []
+    [],
   )
 
   const hasChanges =
-    localParams.similarity_threshold !== defaultSearchParams.similarity_threshold ||
+    localParams.similarity_threshold !==
+      defaultSearchParams.similarity_threshold ||
     localParams.max_results !== defaultSearchParams.max_results ||
-    localParams.searchType !== (mode === 'text' ? 'similarity_full' : 'image_search')
+    localParams.searchType !==
+      (mode === 'text' ? 'similarity_full' : 'image_search')
 
   // Get available search types based on mode
   const getSearchTypeOptions = () => {
     if (mode === 'text') {
       return [
-        { value: 'similarity_full', label: 'Similarity Search (Full)', icon: Search, description: 'Finds similar patents to text generating embeddings' },
-        { value: 'direct_text', label: 'Direct Text Search', icon: FileText, description: 'Finds patents via direct text search' },
-        { value: 'chunks_processing', label: 'Chunk Processing', icon: Layers, description: 'Compares text with specific patent excerpts' },
+        {
+          value: 'similarity_full',
+          label: 'Similarity Search (Full)',
+          icon: Search,
+          description: 'Finds similar patents to text generating embeddings',
+        },
+        {
+          value: 'direct_text',
+          label: 'Direct Text Search',
+          icon: FileText,
+          description: 'Finds patents via direct text search',
+        },
+        {
+          value: 'chunks_processing',
+          label: 'Chunk Processing',
+          icon: Layers,
+          description: 'Compares text with specific patent excerpts',
+        },
       ]
     } else {
       return [
-        { value: 'image_search', label: 'Image Search', icon: ImageIcon, description: 'Finds patents with similar images' },
+        {
+          value: 'image_search',
+          label: 'Image Search',
+          icon: ImageIcon,
+          description: 'Finds patents with similar images',
+        },
       ]
     }
   }
@@ -142,11 +175,15 @@ export function SearchSettingsModal({
             <div className="p-4 rounded-lg bg-secondary/30 border border-border/50">
               <div className="flex items-center gap-2 mb-3">
                 <Zap className="w-4 h-4 text-primary" />
-                <span className="text-sm font-medium text-foreground">Operation Type</span>
+                <span className="text-sm font-medium text-foreground">
+                  Operation Type
+                </span>
               </div>
               <Select
                 value={localParams.searchType}
-                onValueChange={(value: SearchType) => updateParam('searchType', value)}
+                onValueChange={(value: SearchType) =>
+                  updateParam('searchType', value)
+                }
                 disabled={disabled}
               >
                 <SelectTrigger className="w-full">
@@ -164,7 +201,11 @@ export function SearchSettingsModal({
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground mt-2">
-                {searchTypeOptions.find(opt => opt.value === localParams.searchType)?.description}
+                {
+                  searchTypeOptions.find(
+                    (opt) => opt.value === localParams.searchType,
+                  )?.description
+                }
               </p>
             </div>
           )}
@@ -175,28 +216,48 @@ export function SearchSettingsModal({
               <>
                 <FileText className="w-4 h-4" />
                 <span>
-                  Routes: <code className="bg-secondary px-1 rounded font-mono">/embed</code> → <code className="bg-secondary px-1 rounded font-mono">/similarity</code>
+                  Routes:{' '}
+                  <code className="bg-secondary px-1 rounded font-mono">
+                    /embed
+                  </code>{' '}
+                  →{' '}
+                  <code className="bg-secondary px-1 rounded font-mono">
+                    /similarity
+                  </code>
                 </span>
               </>
             ) : currentSearchType === 'direct_text' ? (
               <>
                 <FileText className="w-4 h-4" />
                 <span>
-                  Route: <code className="bg-secondary px-1 rounded font-mono">/search/by-text</code>
+                  Route:{' '}
+                  <code className="bg-secondary px-1 rounded font-mono">
+                    /search/by-text
+                  </code>
                 </span>
               </>
             ) : currentSearchType === 'chunks_processing' ? (
               <>
                 <Layers className="w-4 h-4" />
                 <span>
-                  Routes: <code className="bg-secondary px-1 rounded font-mono">/embed</code> → <code className="bg-secondary px-1 rounded font-mono">/chunks</code>
+                  Routes:{' '}
+                  <code className="bg-secondary px-1 rounded font-mono">
+                    /embed
+                  </code>{' '}
+                  →{' '}
+                  <code className="bg-secondary px-1 rounded font-mono">
+                    /chunks
+                  </code>
                 </span>
               </>
             ) : (
               <>
                 <ImageIcon className="w-4 h-4" />
                 <span>
-                  Route: <code className="bg-secondary px-1 rounded font-mono">/images/search</code>
+                  Route:{' '}
+                  <code className="bg-secondary px-1 rounded font-mono">
+                    /images/search
+                  </code>
                 </span>
               </>
             )}
@@ -209,12 +270,16 @@ export function SearchSettingsModal({
               <div className="p-4 rounded-lg bg-secondary/30 border border-border/50">
                 <div className="flex items-center gap-2 mb-4">
                   <Zap className="w-4 h-4 text-amber-500" />
-                  <span className="text-sm font-medium text-foreground">Similarity Parameters</span>
+                  <span className="text-sm font-medium text-foreground">
+                    Similarity Parameters
+                  </span>
                 </div>
                 <ParameterSlider
                   config={SLIDER_CONFIGS.similarity_threshold}
                   value={localParams.similarity_threshold}
-                  onChange={(value) => updateParam('similarity_threshold', value)}
+                  onChange={(value) =>
+                    updateParam('similarity_threshold', value)
+                  }
                   disabled={disabled}
                 />
               </div>
@@ -223,7 +288,9 @@ export function SearchSettingsModal({
               <div className="p-4 rounded-lg bg-secondary/30 border border-border/50">
                 <div className="flex items-center gap-2 mb-4">
                   <Layers className="w-4 h-4 text-blue-500" />
-                  <span className="text-sm font-medium text-foreground">Results Limit</span>
+                  <span className="text-sm font-medium text-foreground">
+                    Results Limit
+                  </span>
                 </div>
                 <ParameterSlider
                   config={SLIDER_CONFIGS.max_results}
@@ -232,7 +299,6 @@ export function SearchSettingsModal({
                   disabled={disabled}
                 />
               </div>
-
             </>
           )}
         </div>
@@ -251,17 +317,10 @@ export function SearchSettingsModal({
             </Button>
           )}
           <div className="flex-1" />
-          <Button
-            variant="outline"
-            onClick={() => setOpen(false)}
-          >
+          <Button variant="outline" onClick={() => setOpen(false)}>
             Cancel
           </Button>
-          <Button
-            onClick={handleApply}
-            disabled={disabled}
-            className="gap-2"
-          >
+          <Button onClick={handleApply} disabled={disabled} className="gap-2">
             <Check className="w-4 h-4" />
             Apply
           </Button>

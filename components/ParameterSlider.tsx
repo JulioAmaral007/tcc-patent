@@ -37,8 +37,8 @@ export function ParameterSlider({
       {/* Label with value and tooltip */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Label 
-            htmlFor={config.id} 
+          <Label
+            htmlFor={config.id}
             className="text-sm font-medium text-foreground"
           >
             {config.label}
@@ -48,8 +48,8 @@ export function ParameterSlider({
               <TooltipTrigger asChild>
                 <HelpCircle className="w-4 h-4 text-muted-foreground cursor-help hover:text-foreground transition-colors" />
               </TooltipTrigger>
-              <TooltipContent 
-                side="right" 
+              <TooltipContent
+                side="right"
                 className="max-w-xs text-sm bg-popover text-popover-foreground border shadow-lg"
               >
                 <p>{config.description}</p>
@@ -74,7 +74,7 @@ export function ParameterSlider({
           disabled={disabled}
           className="w-full"
         />
-        
+
         {/* Min/Max labels */}
         <div className="flex justify-between mt-1">
           <span className="text-xs text-muted-foreground">

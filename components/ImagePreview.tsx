@@ -1,8 +1,8 @@
 'use client'
 
 import { Card } from '@/components/ui/card'
-import { FileImage, FileText } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { FileImage } from 'lucide-react'
+import { useEffect, useMemo } from 'react'
 import Image from 'next/image'
 
 interface ImagePreviewProps {
@@ -10,38 +10,19 @@ interface ImagePreviewProps {
 }
 
 export function ImagePreview({ file }: ImagePreviewProps) {
-  const [preview, setPreview] = useState<string | null>(null)
-
-  useEffect(() => {
-    if (!file) {
-      const timer = setTimeout(() => setPreview(null), 0)
-      return () => clearTimeout(timer)
-    }
-
-    if (file.type.startsWith('image/')) {
-      const url = URL.createObjectURL(file)
-      const timer = setTimeout(() => setPreview(url), 0)
-      return () => {
-        clearTimeout(timer)
-        URL.revokeObjectURL(url)
-      }
-    } else {
-      const timer = setTimeout(() => setPreview(null), 0)
-      return () => clearTimeout(timer)
-    }
+  const preview = useMemo(() => {
+    if (!file || !file.type.startsWith('image/')) return null
+    return URL.createObjectURL(file)
   }, [file])
 
-  if (!file) return null
+  // Cleanup: revoke blob URL when preview changes or on unmount
+  useEffect(() => {
+    return () => {
+      if (preview) URL.revokeObjectURL(preview)
+    }
+  }, [preview])
 
-  if (file.type === 'application/pdf') {
-    return (
-      <Card className="p-6 bg-muted/50 flex flex-col items-center justify-center">
-        <FileText className="w-12 h-12 text-primary mb-2" />
-        <p className="text-sm text-muted-foreground">Documento PDF</p>
-        <p className="text-xs text-muted-foreground">{file.name}</p>
-      </Card>
-    )
-  }
+  if (!file) return null
 
   if (preview) {
     return (

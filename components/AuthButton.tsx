@@ -4,7 +4,13 @@ import { useEffect, useState, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { signInWithGoogle, signOut } from '@/lib/auth'
 import { supabase } from '@/lib/supabase'
-import { LogIn, LogOut, User as UserIcon, Settings, ChevronDown } from 'lucide-react'
+import {
+  LogIn,
+  LogOut,
+  User as UserIcon,
+  Settings,
+  ChevronDown,
+} from 'lucide-react'
 import { toast } from 'sonner'
 import Image from 'next/image'
 import type { User } from '@supabase/supabase-js'
@@ -19,15 +25,12 @@ export function AuthButton() {
     // Busca a sessão inicial
     const initSession = async () => {
       try {
-        console.log('🔍 [AuthButton] Buscando sessão...')
-        const { data: { session } } = await supabase.auth.getSession()
-        console.log('🔍 [AuthButton] Sessão encontrada?', !!session)
-        if (session) {
-          console.log('✅ [AuthButton] Usuário:', session.user.email)
-        }
+        const {
+          data: { session },
+        } = await supabase.auth.getSession()
         setUser(session?.user ?? null)
-      } catch (error) {
-        console.error('❌ [AuthButton] Erro ao buscar sessão:', error)
+      } catch {
+        setUser(null)
       } finally {
         setLoading(false)
       }
@@ -36,12 +39,11 @@ export function AuthButton() {
     initSession()
 
     // Escuta mudanças na autenticação
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('🔄 [AuthButton] Auth state changed:', event, !!session)
-        setUser(session?.user ?? null)
-      }
-    )
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      setUser(session?.user ?? null)
+    })
 
     // Fechar menu ao clicar fora
     const handleClickOutside = (event: MouseEvent) => {
@@ -60,7 +62,7 @@ export function AuthButton() {
   const handleLogin = async () => {
     try {
       await signInWithGoogle()
-    } catch (error) {
+    } catch {
       toast.error('Error signing in with Google')
     }
   }
@@ -70,7 +72,7 @@ export function AuthButton() {
       await signOut()
       setIsOpen(false)
       toast.success('Session ended')
-    } catch (error) {
+    } catch {
       toast.error('Error signing out')
     }
   }
@@ -91,11 +93,11 @@ export function AuthButton() {
         >
           <div className="w-8 h-8 rounded-full overflow-hidden border border-primary/20 bg-secondary">
             {avatarUrl ? (
-              <Image 
-                src={avatarUrl} 
-                alt={fullName || 'User'} 
-                width={32} 
-                height={32} 
+              <Image
+                src={avatarUrl}
+                alt={fullName || 'User'}
+                width={32}
+                height={32}
                 className="w-full h-full object-cover"
               />
             ) : (
@@ -104,7 +106,9 @@ export function AuthButton() {
               </div>
             )}
           </div>
-          <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+          <ChevronDown
+            className={`w-4 h-4 text-muted-foreground transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+          />
         </button>
 
         {isOpen && (
@@ -117,9 +121,9 @@ export function AuthButton() {
                 {user.email}
               </p>
             </div>
-            
+
             <div className="px-2">
-              <button 
+              <button
                 className="w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded-md hover:bg-accent hover:text-accent-foreground transition-colors"
                 onClick={() => {
                   toast.info('Settings coming soon')
@@ -129,8 +133,8 @@ export function AuthButton() {
                 <Settings className="w-4 h-4" />
                 <span>Settings</span>
               </button>
-              
-              <button 
+
+              <button
                 onClick={handleLogout}
                 className="w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded-md text-destructive hover:bg-destructive/10 transition-colors mt-1"
               >
@@ -145,9 +149,9 @@ export function AuthButton() {
   }
 
   return (
-    <Button 
-      variant="default" 
-      size="sm" 
+    <Button
+      variant="default"
+      size="sm"
       onClick={handleLogin}
       className="gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md transition-all hover:scale-105 active:scale-95 px-4 rounded-full"
     >

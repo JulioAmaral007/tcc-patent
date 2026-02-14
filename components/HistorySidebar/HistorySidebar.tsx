@@ -26,21 +26,28 @@ export function HistorySidebar({
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
 
-  const loadHistory = useCallback(async () => {
-    const analyses = await getFullHistory()
-    setHistory(analyses)
+  const loadHistory = useCallback(() => {
+    getFullHistory().then((analyses) => setHistory(analyses))
   }, [])
 
   useEffect(() => {
-    loadHistory()
+    let cancelled = false
+    getFullHistory().then((analyses) => {
+      if (!cancelled) setHistory(analyses)
+    })
     const handleFocus = () => loadHistory()
     window.addEventListener('focus', handleFocus)
-    return () => window.removeEventListener('focus', handleFocus)
+    return () => {
+      cancelled = true
+      window.removeEventListener('focus', handleFocus)
+    }
   }, [loadHistory])
 
-  const filteredHistory = history.filter(item => 
-    item.inputText.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (item.fileName && item.fileName.toLowerCase().includes(searchTerm.toLowerCase()))
+  const filteredHistory = history.filter(
+    (item) =>
+      item.inputText.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (item.fileName &&
+        item.fileName.toLowerCase().includes(searchTerm.toLowerCase())),
   )
 
   const confirmDelete = async () => {
@@ -79,10 +86,10 @@ export function HistorySidebar({
               </Button>
             )}
           </div>
-          
+
           <div className="relative group">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
-            <input 
+            <input
               type="text"
               placeholder="Search analyses..."
               value={searchTerm}
@@ -103,14 +110,16 @@ export function HistorySidebar({
                   No records found
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  {searchTerm ? 'Try other search terms' : 'Your analyses will appear here'}
+                  {searchTerm
+                    ? 'Try other search terms'
+                    : 'Your analyses will appear here'}
                 </p>
               </div>
             </div>
           ) : (
             <div className="p-4 space-y-3">
               {filteredHistory.map((analysis) => (
-                <HistoryItem 
+                <HistoryItem
                   key={analysis.id}
                   analysis={analysis}
                   onSelect={onSelectAnalysis}

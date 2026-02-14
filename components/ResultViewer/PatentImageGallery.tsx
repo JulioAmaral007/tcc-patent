@@ -1,26 +1,34 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { getPatentImagesAction, getPatentImageBinaryAction } from '@/app/_actions/patent-actions'
+import {
+  getPatentImagesAction,
+  getPatentImageBinaryAction,
+} from '@/app/_actions/patent-actions'
 import { PatentImage } from '@/lib/types'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Card } from '@/components/ui/card'
-import { ImageIcon, AlertCircle, Maximize2, X } from 'lucide-react'
+import { ImageIcon, AlertCircle, Maximize2 } from 'lucide-react'
 import Image from 'next/image'
-import { Button } from '@/components/ui/button'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { toast } from 'sonner'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
 
 interface PatentImageGalleryProps {
   publicationNumber: string
 }
 
-export function PatentImageGallery({ publicationNumber }: PatentImageGalleryProps) {
+export function PatentImageGallery({
+  publicationNumber,
+}: PatentImageGalleryProps) {
   const [images, setImages] = useState<PatentImage[]>([])
   const [imageBinaries, setImageBinaries] = useState<Record<string, string>>({})
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [selectedImage, setSelectedImage] = useState<PatentImage | null>(null)
 
   useEffect(() => {
     async function fetchImages() {
@@ -31,24 +39,26 @@ export function PatentImageGallery({ publicationNumber }: PatentImageGalleryProp
         // Limitamos a no máximo 4 imagens conforme solicitado
         const limitedImages = response.images.slice(0, 4)
         setImages(limitedImages)
-        
+
         // Fetch the actual binary for each image URL (or path)
         const binaries: Record<string, string> = {}
         await Promise.all(
           limitedImages.map(async (img) => {
             try {
               // Note: image_path is what the binary endpoint expects
-              const base64Data = await getPatentImageBinaryAction(img.image_path)
+              const base64Data = await getPatentImageBinaryAction(
+                img.image_path,
+              )
               binaries[img.id] = base64Data
             } catch (err) {
               console.error(`Error fetching binary for image ${img.id}:`, err)
             }
-          })
+          }),
         )
         setImageBinaries(binaries)
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Error fetching patent images:', err)
-        setError('Não foi possível carregar as imagens desta patente.')
+        setError('Could not load images for this patent.')
       } finally {
         setIsLoading(false)
       }
@@ -81,7 +91,7 @@ export function PatentImageGallery({ publicationNumber }: PatentImageGalleryProp
   if (images.length === 0) {
     return (
       <div className="text-sm text-muted-foreground mt-4 italic">
-        Nenhuma imagem disponível para esta patente.
+        No images available for this patent.
       </div>
     )
   }
@@ -90,17 +100,16 @@ export function PatentImageGallery({ publicationNumber }: PatentImageGalleryProp
     <div className="mt-4 space-y-4">
       <div className="flex items-center gap-2 mb-2">
         <ImageIcon className="w-4 h-4 text-primary" />
-        <h5 className="text-sm font-semibold">Imagens da Patente ({images.length})</h5>
+        <h5 className="text-sm font-semibold">
+          Patent Images ({images.length})
+        </h5>
       </div>
-      
+
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
         {images.map((img) => (
           <Dialog key={img.id}>
             <DialogTrigger asChild>
-              <Card 
-                className="group relative aspect-square overflow-hidden cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all border-border bg-muted/30"
-                onClick={() => setSelectedImage(img)}
-              >
+              <Card className="group relative aspect-square overflow-hidden cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all border-border bg-muted/30">
                 {imageBinaries[img.id] ? (
                   <Image
                     src={imageBinaries[img.id]}
@@ -121,7 +130,9 @@ export function PatentImageGallery({ publicationNumber }: PatentImageGalleryProp
             </DialogTrigger>
             <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle className="text-lg">{img.image_filename}</DialogTitle>
+                <DialogTitle className="text-lg">
+                  {img.image_filename}
+                </DialogTitle>
               </DialogHeader>
               <div className="relative aspect-video w-full mt-4 bg-white rounded-lg border border-border">
                 {imageBinaries[img.id] && (
@@ -137,7 +148,9 @@ export function PatentImageGallery({ publicationNumber }: PatentImageGalleryProp
               {img.description && (
                 <div className="mt-4 p-4 bg-muted/50 rounded-xl border border-border">
                   <p className="text-sm text-foreground leading-relaxed">
-                    <span className="font-bold text-primary mr-2">Descrição:</span>
+                    <span className="font-bold text-primary mr-2">
+                      Descrição:
+                    </span>
                     {img.description}
                   </p>
                 </div>

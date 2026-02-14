@@ -1,33 +1,24 @@
 import { Card } from '@/components/ui/card'
-import { Progress } from '@/components/ui/progress'
-
-import { Loader2, Scan, Search } from 'lucide-react'
+import { Loader2, Search } from 'lucide-react'
 
 interface ProcessingProgressProps {
-  progress?: { status?: string; progress?: number } | null
   stage: 'api' | 'similarity' | null
 }
 
-export function ProcessingProgress({
-  progress,
-  stage,
-}: ProcessingProgressProps) {
+export function ProcessingProgress({ stage }: ProcessingProgressProps) {
   if (!stage) return null
 
   const getStageInfo = () => {
-
     if (stage === 'similarity') {
       return {
         title: 'Searching similar patents',
         description: 'Comparing embeddings...',
-        progress: null,
         icon: Search,
       }
     }
     return {
       title: 'Analyzing patent',
       description: 'Sending to analysis API...',
-      progress: null,
       icon: Loader2,
     }
   }
@@ -37,7 +28,7 @@ export function ProcessingProgress({
 
   return (
     <Card className="p-4 bg-primary/5 border-primary/20 animate-fade-in">
-      <div className="flex items-center gap-3 mb-3">
+      <div className="flex items-center gap-3">
         <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
           <Icon
             className={`w-4 h-4 text-primary ${stage === 'api' ? 'animate-spin' : ''}`}
@@ -48,14 +39,6 @@ export function ProcessingProgress({
           <p className="text-xs text-muted-foreground">{info.description}</p>
         </div>
       </div>
-      {info.progress !== null && (
-        <div className="space-y-1">
-          <Progress value={info.progress} className="h-2" />
-          <p className="text-xs text-right text-muted-foreground">
-            {info.progress}%
-          </p>
-        </div>
-      )}
     </Card>
   )
 }

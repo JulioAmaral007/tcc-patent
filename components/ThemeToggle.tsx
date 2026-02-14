@@ -16,7 +16,7 @@ export function ThemeToggle() {
 
   if (!mounted) {
     return (
-      <Toggle variant="outline" size="sm" aria-label="Alternar tema">
+      <Toggle variant="outline" size="sm" aria-label="Toggle theme">
         <Sun className="size-4" />
       </Toggle>
     )
@@ -32,7 +32,7 @@ export function ThemeToggle() {
       onPressedChange={(pressed) => {
         setTheme(pressed ? 'dark' : 'light')
       }}
-      aria-label="Alternar tema"
+      aria-label="Toggle theme"
     >
       {isDark ? <Moon className="size-4" /> : <Sun className="size-4" />}
     </Toggle>

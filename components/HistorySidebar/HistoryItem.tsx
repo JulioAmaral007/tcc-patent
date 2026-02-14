@@ -2,10 +2,10 @@
 
 import { Button } from '@/components/ui/button'
 import { FileText, Image as ImageIcon, Trash2 } from 'lucide-react'
-import { 
-  type AnalysisHistory, 
-  formatAnalysisDate, 
-  getTextPreview 
+import {
+  type AnalysisHistory,
+  formatAnalysisDate,
+  getTextPreview,
 } from '@/lib/history'
 
 interface HistoryItemProps {
@@ -14,10 +14,14 @@ interface HistoryItemProps {
   onDelete: (id: string) => void
 }
 
-export function HistoryItem({ analysis, onSelect, onDelete }: HistoryItemProps) {
+export function HistoryItem({
+  analysis,
+  onSelect,
+  onDelete,
+}: HistoryItemProps) {
   return (
     <div className="group relative">
-      <div 
+      <div
         onClick={() => onSelect(analysis)}
         className="p-4 rounded-2xl bg-muted/20 border border-border/40 hover:bg-muted/40 hover:border-primary/30 transition-all cursor-pointer relative overflow-hidden active:scale-[0.98]"
       >
@@ -34,7 +38,7 @@ export function HistoryItem({ analysis, onSelect, onDelete }: HistoryItemProps) 
               {formatAnalysisDate(analysis.timestamp)}
             </span>
           </div>
-          
+
           <Button
             variant="ghost"
             size="icon"

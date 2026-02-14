@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 
 import { cn } from '@/lib/utils'
-import { AlertCircle, FileImage, FileText, Upload, X } from 'lucide-react'
+import { AlertCircle, FileImage, Upload, X } from 'lucide-react'
 import { useCallback, useState } from 'react'
 import { useDropzone } from 'react-dropzone'
 
@@ -66,9 +66,7 @@ export function UploadArea({
 
   return (
     <div className="space-y-3">
-      <label className="text-sm font-medium text-foreground">
-        File Upload
-      </label>
+      <label className="text-sm font-medium text-foreground">File Upload</label>
 
       {!selectedFile ? (
         <Card
@@ -76,7 +74,8 @@ export function UploadArea({
           className={cn(
             'relative border-2 border-dashed cursor-pointer transition-all duration-300 rounded-lg',
             'hover:border-primary/60 hover:bg-primary/5',
-            isDragActive && 'border-primary bg-primary/10 shadow-glow scale-[1.01]',
+            isDragActive &&
+              'border-primary bg-primary/10 shadow-glow scale-[1.01]',
             isProcessing && 'opacity-50 cursor-not-allowed',
             error && 'border-destructive',
           )}
@@ -86,7 +85,9 @@ export function UploadArea({
             <div
               className={cn(
                 'w-16 h-16 rounded-lg flex items-center justify-center mb-4 transition-all duration-300 shadow-sm',
-                isDragActive ? 'bg-primary/20 scale-110 shadow-glow' : 'bg-secondary/40',
+                isDragActive
+                  ? 'bg-primary/20 scale-110 shadow-glow'
+                  : 'bg-secondary/40',
               )}
             >
               <Upload
@@ -121,15 +122,14 @@ export function UploadArea({
         <Card className="p-4 bg-card/80 rounded-lg border-border/30">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                <FileImage className="w-5 h-5 text-primary" />
+              <FileImage className="w-5 h-5 text-primary" />
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-foreground truncate">
                 {selectedFile.name}
               </p>
               <p className="text-xs text-muted-foreground">
-                Image •{' '}
-                {formatFileSize(selectedFile.size)}
+                Image • {formatFileSize(selectedFile.size)}
               </p>
             </div>
             {!isProcessing && (

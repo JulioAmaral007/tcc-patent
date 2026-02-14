@@ -5,7 +5,10 @@ import { Textarea } from '@/components/ui/textarea'
 import { Send, Bot } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
 import { toast } from 'sonner'
-import { processChatWithAIAction, fetchMessagesAction } from '@/app/_actions/chat-actions'
+import {
+  processChatWithAIAction,
+  fetchMessagesAction,
+} from '@/app/_actions/chat-actions'
 import { ChatMessage } from './ChatMessage'
 
 interface ChatMessageData {
@@ -16,17 +19,41 @@ interface ChatMessageData {
 }
 
 interface ChatPanelProps {
+  /** Texto ou referência do que o usuário enviou (busca por texto ou "Image search: nome do arquivo") */
+  userInput?: string
+  /** Resultado formatado da análise (patentes encontradas, etc.) */
   analysisResult: string
   initialConversationId?: string
 }
 
-export function ChatPanel({ analysisResult, initialConversationId }: ChatPanelProps) {
+function buildChatContext(
+  userInput: string | undefined,
+  analysisResult: string,
+): string {
+  if (!userInput?.trim()) return analysisResult
+  return `INPUT DO USUÁRIO (o texto ou a busca que ele enviou — é em relação a isso que as perguntas do chat são feitas):
+
+${userInput.trim()}
+
+---
+
+RESULTADO DA ANÁLISE (patentes encontradas, similaridade, etc.):
+
+${analysisResult}`
+}
+
+export function ChatPanel({
+  userInput,
+  analysisResult,
+  initialConversationId,
+}: ChatPanelProps) {
+  const apiContext = buildChatContext(userInput, analysisResult)
   const [messages, setMessages] = useState<ChatMessageData[]>([])
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  
+
   const [conversationId] = useState(() => {
-    return initialConversationId || crypto.randomUUID() 
+    return initialConversationId || crypto.randomUUID()
   })
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -39,7 +66,7 @@ export function ChatPanel({ analysisResult, initialConversationId }: ChatPanelPr
           setMessages(history as ChatMessageData[])
         }
       } catch (err) {
-        console.error("Error loading history:", err)
+        console.error('Error loading history:', err)
       }
     }
     loadHistory()
@@ -66,10 +93,10 @@ export function ChatPanel({ analysisResult, initialConversationId }: ChatPanelPr
 
     try {
       const responseText = await processChatWithAIAction(
-        conversationId, 
-        currentInput, 
-        analysisResult
-      );
+        conversationId,
+        currentInput,
+        apiContext,
+      )
 
       const assistantMessage: ChatMessageData = {
         id: `msg-${Date.now()}-assistant`,
@@ -113,17 +140,19 @@ export function ChatPanel({ analysisResult, initialConversationId }: ChatPanelPr
               <div className="w-16 h-16 rounded-2xl bg-muted/50 flex items-center justify-center mb-4 transition-transform hover:scale-110 duration-300">
                 <Bot className="w-8 h-8 text-muted-foreground" />
               </div>
-              <h4 className="font-medium text-foreground mb-1">Start a conversation</h4>
+              <h4 className="font-medium text-foreground mb-1">
+                Start a conversation
+              </h4>
               <p className="text-sm text-muted-foreground max-w-[200px]">
                 Ask questions about the analysis to get more information
               </p>
             </div>
           ) : (
             messages.map((message) => (
-              <ChatMessage 
-                key={message.id} 
-                role={message.role} 
-                content={message.content} 
+              <ChatMessage
+                key={message.id}
+                role={message.role}
+                content={message.content}
               />
             ))
           )}

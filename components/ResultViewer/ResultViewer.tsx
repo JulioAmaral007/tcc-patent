@@ -1,5 +1,6 @@
 'use client'
 
+import type { AnalysisResultData } from '@/lib/types'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { exportToPDF } from '@/lib/pdf'
@@ -9,11 +10,18 @@ import { toast } from 'sonner'
 import { RenderReport } from './RenderReport'
 
 interface ResultViewerProps {
+  /** Texto formatado para PDF e clipboard */
   result: string | null
+  /** Dados estruturados para renderização (evita parse por regex) */
+  resultData?: AnalysisResultData | null
   isLoading: boolean
 }
 
-export function ResultViewer({ result, isLoading }: ResultViewerProps) {
+export function ResultViewer({
+  result,
+  resultData,
+  isLoading,
+}: ResultViewerProps) {
   const [copied, setCopied] = useState(false)
   const [isExporting, setIsExporting] = useState(false)
 
@@ -62,7 +70,9 @@ export function ResultViewer({ result, isLoading }: ResultViewerProps) {
         <div className="p-4 border-b border-border flex items-center justify-between bg-background/30">
           <div className="flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-primary animate-pulse" />
-            <span className="text-sm font-medium text-foreground">Processing analysis...</span>
+            <span className="text-sm font-medium text-foreground">
+              Processing analysis...
+            </span>
           </div>
         </div>
         <div className="p-6 space-y-6">
@@ -100,7 +110,9 @@ export function ResultViewer({ result, isLoading }: ResultViewerProps) {
       <div className="p-4 border-b border-border flex items-center justify-between bg-background/30 backdrop-blur-sm relative z-10">
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 rounded-full bg-primary animate-pulse-glow" />
-          <h3 className="font-semibold text-foreground text-sm sm:text-base">Analysis Report</h3>
+          <h3 className="font-semibold text-foreground text-sm sm:text-base">
+            Analysis Report
+          </h3>
         </div>
         <div className="flex items-center gap-2">
           <Button
@@ -110,8 +122,12 @@ export function ResultViewer({ result, isLoading }: ResultViewerProps) {
             disabled={isExporting}
             className="h-8 rounded-xl border-border hover:bg-muted gap-2 text-xs transition-all active:scale-95"
           >
-            <Download className={`w-3.5 h-3.5 ${isExporting ? 'animate-bounce' : ''}`} />
-            <span className="hidden sm:inline">{isExporting ? 'Exporting...' : 'PDF'}</span>
+            <Download
+              className={`w-3.5 h-3.5 ${isExporting ? 'animate-bounce' : ''}`}
+            />
+            <span className="hidden sm:inline">
+              {isExporting ? 'Exporting...' : 'PDF'}
+            </span>
           </Button>
           <Button
             variant="outline"
@@ -120,17 +136,23 @@ export function ResultViewer({ result, isLoading }: ResultViewerProps) {
             className="h-8 rounded-xl border-border hover:bg-muted gap-2 text-xs transition-all active:scale-95"
           >
             {copied ? (
-              <><Check className="w-3.5 h-3.5 text-primary" /> <span className="hidden sm:inline">Copied</span></>
+              <>
+                <Check className="w-3.5 h-3.5 text-primary" />{' '}
+                <span className="hidden sm:inline">Copied</span>
+              </>
             ) : (
-              <><Copy className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Copy</span></>
+              <>
+                <Copy className="w-3.5 h-3.5" />{' '}
+                <span className="hidden sm:inline">Copy</span>
+              </>
             )}
           </Button>
         </div>
       </div>
 
-      {/* Conteúdo Renderizado do Relatório */}
+      {/* Conteúdo Renderizado do Relatório (dados estruturados preferidos; texto para fallback/export) */}
       <div className="flex-1 overflow-y-auto p-4 sm:p-6 scrollbar-custom bg-background/5 relative">
-        <RenderReport text={result} />
+        <RenderReport data={resultData} text={result} />
       </div>
     </div>
   )
