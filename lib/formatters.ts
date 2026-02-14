@@ -1,46 +1,18 @@
-import type { 
-  SearchByTextResponse, 
+import type {
+  SearchByTextResponse,
   ImagesSearchResponse,
-  PatentsSimilarityResponse,
   ChunksSimilarityResponse,
-  EmbedResponse,
 } from './types'
 
-import { 
-  searchSimilarImagesAction
-} from '@/app/_actions/patent-actions'
-
-// API integration for patent analysis
-
-// ========================================
-// API Calls (Using Server Actions)
-// ========================================
-
-
 /**
- * Realiza busca por similaridade de imagem usando Server Action
+ * Result formatters for export (PDF and clipboard).
+ * UI rendering uses structured data directly; these formatters
+ * are only used to generate text for PDF and copy.
  */
-export async function performImageSearch(options: {
-  file: File
-  similarity_threshold: number
-  max_results: number
-}): Promise<ImagesSearchResponse> {
-  // Convertemos o File para ArrayBuffer antes de enviar para a Server Action
-  const arrayBuffer = await options.file.arrayBuffer()
-  
-  return searchSimilarImagesAction(
-    arrayBuffer,
-    options.file.name,
-    options.similarity_threshold,
-    options.max_results
-  )
-}
 
-// ========================================
-// Result Formatters
-// ========================================
-
-export function formatSimilarityResults(response: SearchByTextResponse): string {
+export function formatSimilarityResults(
+  response: SearchByTextResponse,
+): string {
   let result = `
 ═══════════════════════════════════════════════════════════════
                   TEXT SIMILARITY SEARCH
@@ -74,7 +46,9 @@ export function formatSimilarityResults(response: SearchByTextResponse): string 
   return result.trim()
 }
 
-export function formatChunksSimilarityResults(response: ChunksSimilarityResponse): string {
+export function formatChunksSimilarityResults(
+  response: ChunksSimilarityResponse,
+): string {
   let result = `
 ═══════════════════════════════════════════════════════════════
                   CHUNK SEARCH
@@ -99,7 +73,8 @@ export function formatChunksSimilarityResults(response: ChunksSimilarityResponse
 └── Related Chunks:
 `
     patent.chunks?.forEach((chunk: string, cIdx: number) => {
-      const char = (patent.chunks && cIdx === patent.chunks.length - 1) ? '   └──' : '   ├──'
+      const char =
+        patent.chunks && cIdx === patent.chunks.length - 1 ? '   └──' : '   ├──'
       result += `${char} ${cIdx + 1}. "${chunk.substring(0, 150)}${chunk.length > 150 ? '...' : ''}"\n`
     })
     result += '\n'
@@ -108,7 +83,9 @@ export function formatChunksSimilarityResults(response: ChunksSimilarityResponse
   return result.trim()
 }
 
-export function formatImageSimilarityResults(response: ImagesSearchResponse): string {
+export function formatImageSimilarityResults(
+  response: ImagesSearchResponse,
+): string {
   let result = `
 ═══════════════════════════════════════════════════════════════
                  IMAGE SIMILARITY SEARCH

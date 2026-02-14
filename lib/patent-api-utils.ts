@@ -12,8 +12,6 @@ const API_TOKEN = process.env.PATENT_API_TOKEN
 export const externalApiClient = axios.create({
   baseURL: API_BASE_URL,
   headers: {
-    'Authorization': `Bearer ${API_TOKEN}`,
+    Authorization: `Bearer ${API_TOKEN}`,
   },
 })
-
-

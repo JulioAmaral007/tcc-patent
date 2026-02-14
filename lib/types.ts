@@ -61,6 +61,12 @@ export interface SearchByTextParams {
 
 export type SearchByTextResponse = PatentsSimilarityResponse
 
+/** Dados estruturados de resultado de análise (para renderização, sem parse de string) */
+export type AnalysisResultData =
+  | PatentsSimilarityResponse
+  | ChunksSimilarityResponse
+  | ImagesSearchResponse
+
 // ========================================
 // Route: /patents/images/search
 // ========================================
@@ -214,7 +220,8 @@ export const SLIDER_CONFIGS: Record<string, SliderConfig> = {
   similarity_threshold: {
     id: 'similarity_threshold',
     label: 'Similarity Threshold',
-    description: 'Defines the minimum similarity threshold (0-1). Higher values return more relevant results.',
+    description:
+      'Defines the minimum similarity threshold (0-1). Higher values return more relevant results.',
     min: 0,
     max: 1,
     step: 0.05,

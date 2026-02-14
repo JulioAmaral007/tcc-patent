@@ -34,7 +34,10 @@ export async function signOut() {
  * Obtém o usuário logado de forma segura (lado do cliente)
  */
 export async function getCurrentUser() {
-  const { data: { user }, error } = await supabase.auth.getUser()
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser()
   if (error) {
     // Silencioso para não poluir o log no carregamento inicial
     return null
