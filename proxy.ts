@@ -2,7 +2,7 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 /**
- * Função Proxy para sincronização de sessão
+ * Proxy para sincronização de sessão do Supabase nas navegações
  */
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({
@@ -20,18 +20,20 @@ export async function proxy(request: NextRequest) {
           return request.cookies.getAll()
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
+          cookiesToSet.forEach(({ name, value }) =>
+            request.cookies.set(name, value),
+          )
           response = NextResponse.next({
             request: {
               headers: request.headers,
             },
           })
           cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options)
+            response.cookies.set(name, value, options),
           )
         },
       },
-    }
+    },
   )
 
   // Atualiza a sessão e os cookies se necessário
@@ -39,9 +41,6 @@ export async function proxy(request: NextRequest) {
 
   return response
 }
-
-// Exportação padrão para compatibilidade
-export default proxy
 
 export const config = {
   matcher: [
