@@ -1,6 +1,6 @@
 import { ThemeToggle } from '@/components/ThemeToggle'
 import { AuthButton } from '@/components/AuthButton'
-import { Sparkles } from "lucide-react"
+import { Sparkles } from 'lucide-react'
 
 export function Header() {
   return (
@@ -10,11 +10,15 @@ export function Header() {
           <Sparkles className="w-5 h-5 text-primary-foreground" />
         </div>
         <div>
-          <h1 className="text-sm md:text-lg font-semibold text-foreground leading-tight">Patent Analyzer</h1>
-          <p className="text-[10px] text-muted-foreground hidden sm:block">Intelligent patent processing</p>
+          <h1 className="text-sm md:text-lg font-semibold text-foreground leading-tight">
+            Patent Analyzer
+          </h1>
+          <p className="text-[10px] text-muted-foreground hidden sm:block">
+            Intelligent patent processing
+          </p>
         </div>
       </div>
-      
+
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-2 border-l border-border pl-4">
           <AuthButton />
@@ -24,4 +28,3 @@ export function Header() {
     </header>
   )
 }
-
